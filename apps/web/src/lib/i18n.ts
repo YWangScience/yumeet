@@ -416,6 +416,14 @@ const T = {
   noPendingPayments: { zh: '没有待核销的线下付款。', en: 'No offline payments awaiting reconciliation.' },
   searchByReference: { zh: '按参考号查找', en: 'Find by reference' },
 
+  // 归档概览
+  archiveOverview: { zh: '会议规模', en: 'By the numbers' },
+  archiveContributions: { zh: '篇报告', en: 'contributions' },
+  archiveSessions: { zh: '个分会', en: 'sessions' },
+  archiveSpeakers: { zh: '位特邀讲者', en: 'invited speakers' },
+  archiveDays: { zh: '天会期', en: 'days' },
+  browseArchive: { zh: '浏览全部摘要', en: 'Browse all abstracts' },
+
   // 语言切换
   language: { zh: '语言', en: 'Language' },
   switchToEn: { zh: 'English', en: 'English' },

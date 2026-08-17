@@ -1,10 +1,13 @@
 .grid {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: var(--yu-space-4);
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* 报告题目长短不一,拉伸同排卡片到等高,避免参差 */
+  align-items: stretch;
 }
 .card {
   display: flex; gap: var(--yu-space-4); align-items: flex-start;
+  height: 100%;
   background: var(--yu-color-bg-elevated);
   border: 1px solid var(--yu-color-hairline);
   border-radius: var(--yu-radius-card);
@@ -18,9 +21,19 @@
 }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 
+/*
+ * 头像统一规范:源图来自 Indico,尺寸从 100×110 到 588×535 不等。
+ * 用固定方形 + object-fit: cover + object-position 偏上,
+ * 保证裁切后人脸居中而不是被切到下巴(证件照人脸普遍偏上)。
+ * 尺寸只在这里定义一次,HTML 的 width/height 属性同值,避免加载时布局抖动。
+ */
 .photo, .avatar {
-  flex: 0 0 auto; width: 72px; height: 72px;
-  border-radius: 50%; object-fit: cover;
+  flex: 0 0 auto;
+  width: var(--yu-avatar-size, 72px);
+  height: var(--yu-avatar-size, 72px);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 30%;
   border: 1px solid var(--yu-color-hairline);
   background: var(--yu-color-bg-section);
 }

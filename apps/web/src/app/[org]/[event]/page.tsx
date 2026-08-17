@@ -4,9 +4,11 @@ import Link from 'next/link';
 import {
   getEventBySlug, getEventTickets, getEventForms, getEventSchedule,
   displayStatus, encodeId, eventJsonLd, groupByDay, speakerHighlights,
+  searchAbstracts, listTracks,
 } from '@yumeet/core';
 import { EventHero } from '@/components/event-hero';
 import { SpeakerGrid } from '@/components/speaker-grid';
+import { ArchiveBand, type ArchiveStat } from '@/components/archive-band';
 import { resolveLocale } from '@/lib/locale-server';
 import { eventBase } from '@/lib/event-base';
 import { translator, eventContent } from '@/lib/i18n';
@@ -47,17 +49,29 @@ export default async function EventPage({ params, searchParams }: Props) {
   if (!found || found.event.status === 'draft') notFound();
 
   const { event, org } = found;
-  const [tickets, forms, schedule, speakers] = await Promise.all([
+  const [tickets, forms, schedule, speakers, abstracts, tracks] = await Promise.all([
     getEventTickets(event.id),
     getEventForms(event.id),
     getEventSchedule(event.id),
     speakerHighlights(event.id, 8),
+    event.modules?.archive ? searchAbstracts(event.id, { limit: 1 }) : Promise.resolve(null),
+    event.modules?.archive ? listTracks(event.id) : Promise.resolve([]),
   ]);
 
   const status = displayStatus(event);
   const content = eventContent(event, locale);
   const form = forms[0];
   const days = groupByDay(schedule.sessions, event.timezone);
+
+  // 会议结束后读者关心的从「要不要来」变成「那次讲了什么」,
+  // 因此归档态把规模数字与摘要入口提到最前(ch05 §5.4)
+  const isArchive = status === 'ended' || status === 'archived';
+  const archiveStats: ArchiveStat[] = [
+    { value: abstracts?.totalAll ?? 0, labelKey: 'archiveContributions', href: `${base}/abstracts` },
+    { value: tracks.length, labelKey: 'archiveSessions', href: `${base}/schedule` },
+    { value: speakers.total, labelKey: 'archiveSpeakers', href: `${base}/speakers` },
+    { value: days.length, labelKey: 'archiveDays' },
+  ];
 
   const jsonLd = eventJsonLd({
     title: content.title,
@@ -85,6 +99,8 @@ export default async function EventPage({ params, searchParams }: Props) {
         locale={locale}
         registerHref={form ? `/${orgSlug}/${eventSlug}/register` : null}
       />
+
+      {isArchive && <ArchiveBand stats={archiveStats} locale={locale} />}
 
       <main className={styles.main}>
         {content.description && (

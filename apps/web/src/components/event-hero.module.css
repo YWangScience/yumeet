@@ -30,12 +30,19 @@
   text-wrap: pretty;
 }
 
+/*
+ * hero 三项事实(日期/地点/状态):长会场名会把 flex 挤成不齐的两行。
+ * 改为等宽网格,每项自成一列且不被拆散;窄屏才降为单列。
+ */
 .facts {
-  display: flex; flex-wrap: wrap; justify-content: center;
-  gap: var(--yu-space-8);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, auto));
+  justify-content: center;
+  gap: var(--yu-space-6) var(--yu-space-10);
   margin-top: var(--yu-space-10);
 }
-.fact { text-align: center; }
+.fact { text-align: center; min-width: 0; }
+.fact .factValue { overflow-wrap: anywhere; }
 .factLabel {
   font-size: var(--yu-text-caption-size);
   letter-spacing: 0.05em;
@@ -59,7 +66,10 @@
 }
 .badge_published { background: color-mix(in srgb, var(--yu-color-success-fill) 12%, transparent); color: var(--yu-color-success-text); }
 .badge_live { background: color-mix(in srgb, var(--yu-color-danger-fill) 12%, transparent); color: var(--yu-color-danger-text); }
-.badge_ended, .badge_archived { background: color-mix(in srgb, var(--yu-color-text-secondary) 14%, transparent); color: var(--yu-color-text-secondary); }
+.badge_ended, .badge_archived {
+  background: color-mix(in srgb, var(--yu-color-text-secondary) 14%, transparent);
+  color: var(--yu-color-text-primary);
+}
 .badge_draft { background: color-mix(in srgb, var(--yu-color-warning-fill) 18%, transparent); color: var(--yu-color-warning-text); }
 
 .actions {

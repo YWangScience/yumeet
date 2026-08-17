@@ -13,17 +13,27 @@ import { consumeMagicLink, AuthError, SESSION_COOKIE, SESSION_TTL_MS } from '@yu
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const h = await headers();
+
+  /**
+   * 站在 nginx 反代之后,req.url 的 origin 是内网的 localhost:3210,
+   * 直接用它做跳转会把访客送到一个外部访问不到的地址。
+   * 必须从 X-Forwarded-* 还原访客看到的真实源。
+   */
+  const proto = h.get('x-forwarded-proto') ?? url.protocol.replace(':', '');
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? url.host;
+  const origin = `${proto}://${host}`;
+
   const token = url.searchParams.get('token');
   const rawNext = url.searchParams.get('next') || '/';
   // 只允许站内回跳,防开放重定向(ch12 §12.2)
   const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 
   const fail = (code: string) =>
-    NextResponse.redirect(new URL(`/auth/login?error=${code}`, url.origin), 302);
+    NextResponse.redirect(new URL(`/auth/login?error=${code}`, origin), 302);
 
   if (!token) return fail('missing_token');
 
-  const h = await headers();
   try {
     const session = await consumeMagicLink(token, {
       purpose: 'login',
@@ -31,7 +41,7 @@ export async function GET(req: Request) {
       ip: h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
     });
 
-    const res = NextResponse.redirect(new URL(next, url.origin), 302);
+    const res = NextResponse.redirect(new URL(next, origin), 302);
     res.cookies.set(SESSION_COOKIE, session.sessionToken, {
       httpOnly: true,
       secure: true,

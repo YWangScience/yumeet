@@ -5,7 +5,6 @@
  * 用 node:util 的 parseArgs 解析参数,不引入 commander/yargs
  * —— ch11「不引入规格外的重量依赖」。
  */
-import { parseArgs } from 'node:util';
 import { doctor } from './commands/doctor';
 import { adminCmd } from './commands/admin';
 import { themeCmd } from './commands/theme';
@@ -80,5 +79,4 @@ async function main(): Promise<void> {
   }
 }
 
-export { parseArgs };
 void main();

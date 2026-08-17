@@ -13,7 +13,7 @@
 .chairList { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--yu-space-2); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .chair { display: flex; flex-direction: column; gap: 1px; }
 .chairName { font-size: var(--yu-text-callout-size); font-weight: 600; }
-.chairAff { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.chairAff { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-primary); }
 
 .countries { display: grid; gap: var(--yu-space-6); grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 .country { break-inside: avoid; }

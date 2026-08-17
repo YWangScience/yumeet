@@ -51,8 +51,8 @@ export function SpeakerGrid({
                 src={s.photoUrl}
                 alt=""
                 loading="lazy"
-                width={96}
-                height={96}
+                width={72}
+                height={72}
               />
             ) : (
               <span className={styles.avatar} aria-hidden="true">{initials(s.name)}</span>

@@ -85,6 +85,28 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.1)
 
+  packages/cli:
+    dependencies:
+      '@yumeet/core':
+        specifier: workspace:*
+        version: link:../core
+      '@yumeet/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.38.3
+        version: 0.38.4(@types/react@19.2.18)(postgres@3.4.9)(react@19.2.8)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.12
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/core:
     dependencies:
       '@resvg/resvg-js':

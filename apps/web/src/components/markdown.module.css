@@ -25,8 +25,17 @@
 }
 
 /* 自定义页面里的富内容 */
-.prose a { color: var(--yu-color-accent-text); text-decoration: none; }
-.prose a:hover { text-decoration: underline; }
+/*
+ * 正文段落中的链接必须有非颜色的可辨识标记(WCAG 1.4.1 link-in-text-block):
+ * 段落里只靠颜色区分链接,对色觉障碍者不可辨。故默认带下划线。
+ */
+.prose a {
+  color: var(--yu-color-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose a:hover { text-decoration-thickness: 2px; }
 .prose img {
   max-width: 100%; height: auto;
   border-radius: var(--yu-radius-card);
