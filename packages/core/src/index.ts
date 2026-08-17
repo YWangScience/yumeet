@@ -19,3 +19,4 @@ export * from './services/gdpr';
 export * from './services/payment';
 /* 现场模式:胸牌、会场屏、实时公告(ch05 §5.2) */
 export * from './services/onsite';
+export * from './services/members';

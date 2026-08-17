@@ -30,4 +30,4 @@
 }
 .item:hover { background: var(--yu-color-bg-section); text-decoration: none; }
 .item:focus-visible { outline: 3px solid var(--yu-color-focus-ring); outline-offset: -2px; }
-@media (max-width: 560px) { .wrap { display: none; } }
+@media (max-width: 860px) { .wrap { display: none; } }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { LangSwitch } from './lang-switch';
 import { NavMenu } from './nav-menu';
+import { MobileNav } from './mobile-nav';
 import type { Locale } from '@/lib/i18n';
 import styles from './site-nav.module.css';
 
@@ -54,6 +55,15 @@ export function SiteNav({ base, title, items, groups, cta, locale }: Props) {
               links={links}
             />
           ))}
+          <MobileNav
+            label={locale === 'zh' ? '菜单' : 'Menu'}
+            items={items}
+            groups={groupEntries}
+            groupLabels={Object.fromEntries(
+              Object.entries(GROUP_LABEL).map(([k, v]) => [k, v[locale]]),
+            )}
+            cta={cta}
+          />
           <Suspense fallback={null}>
             <LangSwitch locale={locale} />
           </Suspense>

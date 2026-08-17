@@ -36,8 +36,11 @@
   text-decoration: none; white-space: nowrap;
 }
 .cta:hover { background: var(--yu-color-accent-hover); text-decoration: none; }
+/* 窄屏顶栏放不下 7 个入口,链接与下拉交给汉堡抽屉(mobile-nav) */
+@media (max-width: 860px) {
+  .link { display: none; }
+}
 @media (max-width: 560px) {
   .inner { padding: 0 var(--yu-space-4); }
-  .links { gap: var(--yu-space-3); }
-  .link { display: none; }
+  .links { gap: var(--yu-space-2); }
 }

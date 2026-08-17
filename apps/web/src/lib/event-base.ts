@@ -19,6 +19,15 @@ export async function eventBase(orgSlug: string, eventSlug: string): Promise<str
   return BOUND_HOSTS.has(host) ? '' : `/${orgSlug}/${eventSlug}`;
 }
 
+/**
+ * 活动首页的链接。绑定域名下 base 是空串,直接用它会拼出 href="",
+ * 浏览器会把空 href 当作「当前页」,且 axe 判定为无可辨识文本的链接。
+ * 故首页链接单独取:绑定域名下为 '/',平台域名下为 '/{org}/{event}'。
+ */
+export async function eventHome(orgSlug: string, eventSlug: string): Promise<string> {
+  return (await eventBase(orgSlug, eventSlug)) || '/';
+}
+
 export async function isBoundHost(): Promise<boolean> {
   const host = (await headers()).get('host')?.toLowerCase() ?? '';
   return BOUND_HOSTS.has(host);

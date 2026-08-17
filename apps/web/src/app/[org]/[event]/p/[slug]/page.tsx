@@ -43,7 +43,7 @@ export default async function EventCustomPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={`${base}`}>{content.title}</Link>
+        <Link href={base || "/"}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{title}</span>
       </nav>

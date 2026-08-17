@@ -424,6 +424,31 @@ const T = {
   archiveDays: { zh: '天会期', en: 'days' },
   browseArchive: { zh: '浏览全部摘要', en: 'Browse all abstracts' },
 
+  // 成员与权限
+  membersTitle: { zh: '成员与权限', en: 'Members & roles' },
+  membersLede: {
+    zh: '会议的权力结构在此设定。学术决议(IOC)与事务执行(LOC)分权;分会主席只能管辖指定的分会。授予或回收角色会立即使该用户的会话失效,新权限即时生效。',
+    en: 'Set the event\u2019s authority structure here. Academic decisions (IOC) and operations (LOC) are separated; session chairs are scoped to their own sessions. Granting or revoking a role signs the user out so the change takes effect immediately.',
+  },
+  grantRole: { zh: '授予角色', en: 'Grant role' },
+  currentMembers: { zh: '现有成员', en: 'Current members' },
+  roleReference: { zh: '角色权限说明', en: 'Role reference' },
+  roleScope: { zh: '职责范围', en: 'Scope' },
+  role: { zh: '角色', en: 'Role' },
+  assignTracks: { zh: '管辖的分会', en: 'Sessions in scope' },
+  assignedTracks: { zh: '管辖分会', en: 'Scope' },
+  noTracks: { zh: '本活动尚无分会,请先导入投稿或创建分会。', en: 'No sessions yet — import submissions or create sessions first.' },
+  noMembers: { zh: '暂无成员。', en: 'No members yet.' },
+  revoke: { zh: '移除', en: 'Revoke' },
+  actions: { zh: '操作', en: 'Actions' },
+  you: { zh: '(你)', en: '(you)' },
+  roleGranted: { zh: '已授予角色', en: 'Role granted' },
+  memberCreated: { zh: '已创建账户并授予角色,对方首次登录即生效', en: 'Account created and role granted; effective on their first sign-in' },
+  roleNote: {
+    zh: '整个分会占用哪个时段、放在哪个会场由大会管理员统一安排;分会主席只在已分配的时段内排定本分会各报告的顺序与时刻。',
+    en: 'Which slot and room a session occupies is set by organisers; session chairs only order and time the talks within their allocated slot.',
+  },
+
   // 语言切换
   language: { zh: '语言', en: 'Language' },
   switchToEn: { zh: 'English', en: 'English' },

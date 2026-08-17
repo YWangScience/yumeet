@@ -17,3 +17,6 @@ export * from './services/schedule';
 export type {
   ScreenState, ScreenSession, Announcement, AnnouncementLevel,
 } from './services/onsite';
+
+// 角色常量(渲染下拉与权限说明表)
+export * from './roles';

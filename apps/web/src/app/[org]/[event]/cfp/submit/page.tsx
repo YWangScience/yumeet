@@ -60,7 +60,7 @@ export default async function CfpSubmitPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label={locale === 'zh' ? '面包屑' : 'Breadcrumb'}>
-        <Link href={`${base}`}>{content.title}</Link>
+        <Link href={base || "/"}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <Link href={`${base}/cfp?lang=${locale}`}>{tt('cfpTitle')}</Link>
         <span aria-hidden="true"> / </span>

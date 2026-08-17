@@ -13,7 +13,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { and, eq, gt, isNull, lt, sql, desc, count } from 'drizzle-orm';
 import {
   db as defaultDb, users, loginTokens, sessionsAuth,
-  organizationMembers, eventMembers, organizations, events,
+  organizationMembers, eventMembers, organizations, events, sessionChairs,
   type Db,
 } from '@yumeet/db';
 import { audit } from '../audit/index';
@@ -258,11 +258,17 @@ export function isStepUpFresh(session: SessionUser, now = Date.now()): boolean {
 export type Capability =
   | 'event.view' | 'event.edit' | 'event.publish' | 'event.delete'
   | 'registration.view' | 'registration.manage' | 'registration.export'
+  | 'payment.reconcile'
   | 'submission.view' | 'submission.manage' | 'submission.decide'
   | 'review.submit'
+  /** 编排整个日程:哪个分会占哪个时段、放哪个会场 —— 只有大会层可为 */
   | 'schedule.edit' | 'schedule.publish'
+  /** 在本分会已分配的时段内排定各报告的具体时刻 —— 分会主席可为 */
+  | 'schedule.edit_own_track'
+  /** 对本分会投稿的决定权 */
+  | 'submission.decide_own_track'
   | 'design.edit'
-  | 'onsite.checkin'
+  | 'onsite.checkin' | 'onsite.manage'
   | 'member.manage'
   | 'webhook.manage'
   | 'privacy.manage';
@@ -281,13 +287,61 @@ const ORG_ROLE_CAPS: Record<string, Capability[]> = {
   member: ['event.view'],
 };
 
+/**
+ * 活动级角色 → 能力。设计原则:
+ *
+ *  1. **学术与事务分权**:IOC 决定「讲什么」(投稿录用、学术编排),
+ *     LOC 决定「怎么办」(注册、收款、场地、现场)。两者互不越界,
+ *     这是学术会议的通例 —— 决定录用的人不该同时掌握退款。
+ *  2. **分会主席受限于自己的分会**:给 *_own_track 能力而非全局能力,
+ *     实际范围由 grantsFor() 返回的 tracks 限定(见下)。
+ *  3. **整体时段编排只归大会层**:分会主席能排本分会内部顺序,
+ *     但不能改本分会占用的时段与会场,否则各分会会互相抢资源。
+ */
 const EVENT_ROLE_CAPS: Record<string, Capability[]> = {
-  organizer: ['event.view', 'event.edit', 'event.publish',
+  // 大会总负责:活动内一切权限
+  organizer: [
+    'event.view', 'event.edit', 'event.publish',
     'registration.view', 'registration.manage', 'registration.export',
+    'payment.reconcile',
     'submission.view', 'submission.manage', 'submission.decide',
-    'schedule.edit', 'schedule.publish', 'design.edit', 'onsite.checkin'],
-  collaborator: ['event.view', 'event.edit',
-    'registration.view', 'submission.view', 'schedule.edit', 'design.edit'],
+    'schedule.edit', 'schedule.publish', 'design.edit',
+    'onsite.checkin', 'onsite.manage', 'member.manage',
+  ],
+
+  // 国际组织委员会主席:学术最高权限,含全局日程编排
+  ioc_chair: [
+    'event.view', 'event.edit',
+    'submission.view', 'submission.manage', 'submission.decide',
+    'schedule.edit', 'schedule.publish',
+    'registration.view', 'member.manage',
+  ],
+  // IOC 委员:参与学术决议,不改日程、不碰注册管理
+  ioc_member: [
+    'event.view', 'submission.view', 'submission.decide', 'review.submit',
+  ],
+
+  // 本地组织委员会主席:事务最高权限,不参与学术决议
+  loc_chair: [
+    'event.view', 'event.edit',
+    'registration.view', 'registration.manage', 'registration.export',
+    'payment.reconcile',
+    'onsite.checkin', 'onsite.manage', 'design.edit',
+  ],
+  // LOC 成员:执行层
+  loc_member: [
+    'event.view', 'registration.view', 'onsite.checkin',
+  ],
+
+  // 分会主席:只对自己分会有决定权(范围由 tracks 限定)
+  session_chair: [
+    'event.view', 'submission.view',
+    'submission.decide_own_track', 'schedule.edit_own_track',
+  ],
+
+  collaborator: [
+    'event.view', 'event.edit', 'registration.view', 'submission.view', 'design.edit',
+  ],
   reviewer: ['event.view', 'submission.view', 'review.submit'],
   volunteer: ['event.view', 'onsite.checkin'],
 };
@@ -296,6 +350,10 @@ export interface Grant {
   capabilities: Set<Capability>;
   orgRole: string | null;
   eventRoles: string[];
+  /** 分会主席管辖的分会代码;非分会主席为空数组 */
+  tracks: string[];
+  /** 是否为大会层(可跨分会操作) */
+  isEventWide: boolean;
 }
 
 /** 解析某用户在某活动上的全部能力(组织级 ∪ 活动级) */
@@ -306,7 +364,7 @@ export async function grantsFor(
 ): Promise<Grant> {
   const [ev] = await db.select({ organizationId: events.organizationId })
     .from(events).where(eq(events.id, eventId)).limit(1);
-  if (!ev) return { capabilities: new Set(), orgRole: null, eventRoles: [] };
+  if (!ev) return { capabilities: new Set(), orgRole: null, eventRoles: [], tracks: [], isEventWide: false };
 
   const [orgRow] = await db.select({ role: organizationMembers.role })
     .from(organizationMembers)
@@ -323,11 +381,64 @@ export async function grantsFor(
   if (orgRow) for (const c of ORG_ROLE_CAPS[orgRow.role] ?? []) caps.add(c);
   for (const r of evRows) for (const c of EVENT_ROLE_CAPS[r.role] ?? []) caps.add(c);
 
+  const roles = evRows.map((r) => r.role);
+
+  // 分会主席的管辖范围
+  let tracks: string[] = [];
+  if (roles.includes('session_chair')) {
+    const rows = await db.select({ track: sessionChairs.track })
+      .from(sessionChairs)
+      .where(and(eq(sessionChairs.eventId, eventId), eq(sessionChairs.userId, userId)));
+    tracks = rows.map((r) => r.track);
+  }
+
+  // 大会层:组织管理员或活动级的总负责/委员会主席
+  const isEventWide = Boolean(orgRow && ['owner', 'admin'].includes(orgRow.role))
+    || roles.some((r) => ['organizer', 'ioc_chair', 'loc_chair'].includes(r));
+
   return {
     capabilities: caps,
     orgRole: orgRow?.role ?? null,
-    eventRoles: evRows.map((r) => r.role),
+    eventRoles: roles,
+    tracks,
+    isEventWide,
   };
+}
+
+/**
+ * 带范围的授权检查 —— 分会主席权限模型的关键。
+ *
+ * 同一个动作(如「决定一篇投稿」)对大会层与分会主席的判定不同:
+ * 大会层看是否有全局能力;分会主席还要看这篇投稿是否属于他管辖的分会。
+ * 把范围判断放在这里而不是各调用点,是为了避免某个页面漏判就绕过整套模型。
+ */
+export async function requireScopedCapability(
+  userId: string,
+  eventId: string,
+  action: 'submission.decide' | 'schedule.edit',
+  scope: { track?: string | null },
+  db: Db = defaultDb,
+): Promise<Grant> {
+  const grant = await grantsFor(userId, eventId, db);
+
+  // 先看全局能力
+  if (grant.capabilities.has(action)) return grant;
+
+  // 再看「限本分会」的能力
+  const ownCap = `${action}_own_track` as Capability;
+  if (grant.capabilities.has(ownCap)) {
+    const track = scope.track ?? null;
+    if (track && grant.tracks.includes(track)) return grant;
+    throw new ForbiddenError(ownCap);
+  }
+
+  throw new ForbiddenError(action);
+}
+
+/** 某用户能否管辖某分会(UI 用来决定是否显示操作按钮) */
+export function canManageTrack(grant: Grant, track: string | null | undefined): boolean {
+  if (grant.isEventWide) return true;
+  return Boolean(track && grant.tracks.includes(track));
 }
 
 export class ForbiddenError extends Error {

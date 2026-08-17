@@ -55,9 +55,29 @@ export const organizationMembers = pgTable('organization_members', {
   uniqueIndex('org_members_uq').on(t.organizationId, t.userId),
 ]);
 
-/** 活动级角色(ch06 §6.4) */
+/**
+ * 活动级角色(ch06 §6.4,按会议组织的真实职责扩展)
+ *
+ * 会议的权力结构不是扁平的:
+ *   organizer      —— 大会总负责,可改一切(相当于活动内的管理员)
+ *   ioc_chair      —— 国际组织委员会主席:定学术方向,可管全部投稿与分会编排
+ *   ioc_member     —— IOC 委员:可看全部投稿、参与决议,不改日程
+ *   loc_chair      —— 本地组织委员会主席:管注册、场地、现场与财务,不碰学术决议
+ *   loc_member     —— LOC 成员:执行层,签到与名单
+ *   session_chair  —— 分会主席:只管自己那个分会(见 event_session_chairs)
+ *   collaborator   —— 协作者:能编辑内容但不做决议
+ *   reviewer       —— 审稿人
+ *   volunteer      —— 志愿者:仅现场签到
+ *
+ * 学术权力(IOC)与事务权力(LOC)分离是学术会议的通例:
+ * 谁能决定录用,与谁能决定退款,本就不该是同一批人。
+ */
 export const eventRole = pgEnum('event_role', [
-  'organizer', 'collaborator', 'reviewer', 'volunteer',
+  'organizer',
+  'ioc_chair', 'ioc_member',
+  'loc_chair', 'loc_member',
+  'session_chair',
+  'collaborator', 'reviewer', 'volunteer',
 ]);
 
 export const eventMembers = pgTable('event_members', {
@@ -96,3 +116,25 @@ export const loginTokens = pgTable('login_tokens', {
   expiresAt: ts('expires_at').notNull(),
   createdAt: ts('created_at').notNull().defaultNow(),
 }, (t) => [uniqueIndex('login_tokens_hash_uq').on(t.tokenHash)]);
+
+/**
+ * 分会主席的管辖范围(ch06 §6.4 的对象级授权落点)
+ *
+ * 一个平行分会可以有多位主席;他们只对**自己分会内**的投稿有决定权:
+ * 批准/退回报告、在本分会已分配的时段内排定每个报告的具体时刻。
+ * 整个分会占用哪个时间段、放在哪个会场,由大会管理员统一安排 ——
+ * 这条边界是会议能开起来的前提,否则各分会会互相抢时段与会场。
+ */
+export const sessionChairs = pgTable('event_session_chairs', {
+  id: uuid('id').primaryKey().$defaultFn(uuidv7),
+  eventId: uuid('event_id').notNull(),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  /** 管辖的分会:对应 submissions.track 与 sessions 的分组键(如 BH2、GW4) */
+  track: text('track').notNull(),
+  /** 是否为该分会的召集人(多位主席时的首要联系人) */
+  isConvener: boolean('is_convener').notNull().default(false),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('session_chairs_uq').on(t.eventId, t.userId, t.track),
+  index('session_chairs_track_idx').on(t.eventId, t.track),
+]);

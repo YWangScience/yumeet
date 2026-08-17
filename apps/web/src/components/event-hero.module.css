@@ -13,6 +13,11 @@
   margin-bottom: var(--yu-space-4);
 }
 .title {
+  /* 中西混排标题在窄屏会从「第十七」与「届」之间断开。
+     keep-all 让 CJK 词组不被拆散,拉丁词仍在词边界换行。 */
+  line-break: strict;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   font-size: var(--yu-text-display-1-size);
   font-weight: var(--yu-text-display-1-weight);
   letter-spacing: var(--yu-text-display-1-tracking);
@@ -99,8 +104,12 @@
 .buttonGhost:hover { border-color: var(--yu-color-accent); text-decoration: none; }
 
 @media (max-width: 640px) {
-  .hero { padding: var(--yu-space-12) var(--yu-space-5) var(--yu-space-10); }
-  .title { font-size: 48px; }
-  .subtitle { font-size: var(--yu-text-body-size); }
-  .facts { gap: var(--yu-space-5); }
+  .hero { padding: var(--yu-space-10) var(--yu-space-5) var(--yu-space-8); }
+  /* 手机上 80px 标题会占满整屏,读者看不到下面任何内容 */
+  .title { font-size: clamp(28px, 8vw, 40px); }
+  .subtitle { font-size: var(--yu-text-callout-size); margin-top: var(--yu-space-4); }
+  .org { font-size: var(--yu-text-caption-size); margin-bottom: var(--yu-space-3); }
+  .facts { grid-template-columns: 1fr; gap: var(--yu-space-4); margin-top: var(--yu-space-6); }
+  .factValue { font-size: var(--yu-text-callout-size); }
+  .actions { margin-top: var(--yu-space-6); }
 }

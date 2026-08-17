@@ -1,0 +1,17 @@
+.page { max-width: 1060px; margin: 0 auto; padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24); }
+.title { font-size: var(--yu-text-title-2-size); font-weight: var(--yu-text-title-2-weight); letter-spacing: var(--yu-text-title-2-tracking); }
+.lede { margin: var(--yu-space-3) 0 var(--yu-space-10); color: var(--yu-color-text-secondary); line-height: 1.65; max-width: 50em; text-wrap: pretty; }
+.section { margin-bottom: var(--yu-space-12); }
+.sectionHead { display: flex; align-items: baseline; gap: var(--yu-space-3); margin-bottom: var(--yu-space-4); }
+.sectionTitle { font-size: var(--yu-text-title-3-size); font-weight: var(--yu-text-title-3-weight); letter-spacing: var(--yu-text-title-3-tracking); margin-bottom: var(--yu-space-4); }
+.sectionHead .sectionTitle { margin-bottom: 0; }
+.count { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); font-variant-numeric: tabular-nums; }
+.tableWrap { overflow-x: auto; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+.refTable { width: 100%; border-collapse: collapse; font-size: var(--yu-text-footnote-size); }
+.refTable thead th { text-align: left; padding: var(--yu-space-3) var(--yu-space-4); background: var(--yu-color-bg-section); border-bottom: 1px solid var(--yu-color-hairline); font-weight: 600; color: var(--yu-color-text-secondary); font-size: var(--yu-text-caption-size); }
+.refTable td { padding: var(--yu-space-3) var(--yu-space-4); border-bottom: 1px solid var(--yu-color-hairline); vertical-align: top; }
+.refTable tbody tr:last-child td { border-bottom: 0; }
+.roleName { font-weight: 600; white-space: nowrap; }
+.roleDesc { color: var(--yu-color-text-secondary); line-height: 1.5; }
+.note { margin-top: var(--yu-space-4); padding: var(--yu-space-4); background: color-mix(in srgb, var(--yu-color-accent) 7%, transparent); border-radius: var(--yu-radius-control); font-size: var(--yu-text-footnote-size); line-height: 1.6; }
+@media (max-width: 640px) { .page { padding: var(--yu-space-6) var(--yu-space-4) var(--yu-space-16); } .title { font-size: 28px; } }

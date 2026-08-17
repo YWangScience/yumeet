@@ -61,7 +61,7 @@ export default async function AbstractsPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={`${base}`}>{content.title}</Link>
+        <Link href={base || "/"}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('abstracts')}</span>
       </nav>

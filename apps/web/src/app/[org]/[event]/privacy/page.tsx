@@ -62,7 +62,7 @@ export default async function PrivacyPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label={locale === 'zh' ? '面包屑' : 'Breadcrumb'}>
-        <Link href={`${base}`}>{notice.event.title}</Link>
+        <Link href={base || "/"}>{notice.event.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('privacyNav')}</span>
       </nav>
@@ -247,7 +247,7 @@ export default async function PrivacyPage({ params, searchParams }: Props) {
       </section>
 
       <p className={styles.footnote}>
-        <Link href={`${base}`}>{tt('backToEvent')}</Link>
+        <Link href={base || "/"}>{tt('backToEvent')}</Link>
       </p>
     </main>
   );

@@ -56,7 +56,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="面包屑">
-        <Link href={`${base}`}>{content.title}</Link>
+        <Link href={base || "/"}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('registration')}</span>
       </nav>

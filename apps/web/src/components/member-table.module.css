@@ -1,0 +1,23 @@
+.tableWrap { overflow-x: auto; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--yu-text-footnote-size); }
+.table thead th { text-align: left; padding: var(--yu-space-3) var(--yu-space-4); background: var(--yu-color-bg-section); border-bottom: 1px solid var(--yu-color-hairline); font-weight: 600; color: var(--yu-color-text-secondary); font-size: var(--yu-text-caption-size); white-space: nowrap; }
+.table td { padding: var(--yu-space-3) var(--yu-space-4); border-bottom: 1px solid var(--yu-color-hairline); vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.pending { opacity: 0.55; }
+.email { font-weight: 500; }
+.self { margin-left: 6px; font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary); }
+.roles { display: flex; gap: 4px; flex-wrap: wrap; }
+.roleChip { font-size: var(--yu-text-caption-size); font-weight: 500; padding: 2px 10px; border-radius: var(--yu-radius-pill); background: color-mix(in srgb, var(--yu-color-text-secondary) 14%, transparent); white-space: nowrap; }
+.role_organizer { background: color-mix(in srgb, var(--yu-color-accent) 16%, transparent); color: var(--yu-color-accent-text); }
+.role_ioc_chair, .role_ioc_member { background: color-mix(in srgb, var(--yu-color-success-fill) 16%, transparent); color: var(--yu-color-success-text); }
+.role_loc_chair, .role_loc_member { background: color-mix(in srgb, var(--yu-color-warning-fill) 18%, transparent); color: var(--yu-color-warning-text); }
+.role_session_chair { background: color-mix(in srgb, var(--yu-color-accent) 12%, transparent); color: var(--yu-color-accent-text); }
+.tracks { display: flex; gap: 4px; flex-wrap: wrap; }
+.track { font-family: var(--yu-font-family-mono); font-size: var(--yu-text-caption-size); background: var(--yu-color-bg-section); border: 1px solid var(--yu-color-hairline); border-radius: 5px; padding: 1px 7px; }
+.dash { color: var(--yu-color-text-secondary); }
+.actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.revoke { font: inherit; font-size: var(--yu-text-caption-size); color: var(--yu-color-danger-text); background: transparent; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-pill); padding: 3px 11px; cursor: pointer; white-space: nowrap; }
+.revoke:hover:not(:disabled) { border-color: var(--yu-color-danger-fill); background: color-mix(in srgb, var(--yu-color-danger-fill) 8%, transparent); }
+.revoke:disabled { opacity: 0.5; cursor: progress; }
+.empty { padding: var(--yu-space-8); text-align: center; color: var(--yu-color-text-secondary); border: 1px dashed var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+.error { margin-bottom: var(--yu-space-3); color: var(--yu-color-danger-text); font-size: var(--yu-text-callout-size); }
