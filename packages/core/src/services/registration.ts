@@ -2,7 +2,7 @@
  * 报名服务(ch09 §9.4 状态机 + ch04 §4.2 注册票务 + ch13 §13.3 库存时序)
  * 业务逻辑唯一实现处 —— apps/web 经 Server Actions 进程内调用,apps/api 与 worker 同样 import 之。
  */
-import { and, eq, sql, desc, count } from 'drizzle-orm';
+import { and, eq, sql, asc, desc, count } from 'drizzle-orm';
 import {
   db as defaultDb, events, registrationForms, registrations, tickets, orders, outbox,
   type Db,
@@ -15,6 +15,7 @@ import {
   audit, generateAccessToken, generateConfirmationCode, hashToken, timelineFor,
 } from '../audit/index';
 import { encodeId } from '../ids/index';
+import { applyFilters, runActions } from '../plugins/registry';
 
 export interface Actor {
   type: 'user' | 'api_key' | 'system';
@@ -42,6 +43,8 @@ export interface SubmitInput {
   answers: Record<string, unknown>;
   ticketId?: string | null;
   userId?: string | null;
+  /** 付费票的支付方式;缺省用银行转账(线下核销) */
+  paymentMethod?: 'stripe' | 'bank_transfer' | 'alipay' | 'wechat' | 'onsite';
   actor?: Actor;
 }
 
@@ -53,6 +56,15 @@ export interface SubmitResult {
   confirmationCode: string;
   trackingPath: string;
   waitlistPosition?: number | null;
+  /** 付费票才有:订单与付款说明入口 */
+  order: {
+    orderId: string;
+    method: string;
+    paymentReference: string | null;
+    totalCents: number;
+    currency: string;
+    payPath: string;
+  } | null;
 }
 
 /**
@@ -155,6 +167,16 @@ export async function submitRegistration(
   const accessToken = generateAccessToken();
   const confirmationCode = generateConfirmationCode();
 
+  // 插件的 filter hook:可改写答案、可否决报名(黑名单、外部资格校验)。
+  // 放在事务外 —— 插件里可能有网络调用,不能占着数据库连接。
+  const [orgRow] = await db.select({ organizationId: events.organizationId })
+    .from(events).where(eq(events.id, input.eventId)).limit(1);
+  const filtered = await applyFilters(
+    'registration.beforeCreate',
+    { email, answers: parsed.data as Record<string, unknown>, ticketId: input.ticketId ?? null, status },
+    { organizationId: orgRow!.organizationId, eventId: input.eventId },
+  );
+
   const registrationId = await db.transaction(async (tx) => {
     const [row] = await tx.insert(registrations).values({
       eventId: input.eventId,
@@ -163,7 +185,7 @@ export async function submitRegistration(
       ticketId: input.ticketId ?? null,
       userId: input.userId ?? null,
       email,
-      answers: parsed.data as Record<string, unknown>,
+      answers: filtered.answers,
       status,
       waitlistPosition,
       confirmationCode,
@@ -206,6 +228,49 @@ export async function submitRegistration(
     return id;
   });
 
+  /**
+   * 付费票进入 awaiting_payment 后必须立刻有订单:
+   * 订单承载金额、付款方式与参考号,没有它参会者拿不到付款说明,
+   * 这笔报名就永远停在待支付而无法推进(yumeet doctor 会把这类记录报为不一致)。
+   *
+   * 建单失败不回滚报名 —— 报名本身是有效的,组织者可在后台补建订单;
+   * 若因建单失败而丢掉整条报名,对参会者是更坏的结果。
+   */
+  let orderInfo: SubmitResult['order'] = null;
+  if (status === 'awaiting_payment') {
+    try {
+      const { createOrder } = await import('./payment');
+      const created = await createOrder({
+        eventId: input.eventId,
+        registrationId,
+        method: input.paymentMethod ?? 'bank_transfer',
+        email,
+        userId: input.userId ?? null,
+        actor,
+      }, db);
+      orderInfo = {
+        orderId: created.orderId,
+        method: created.method,
+        paymentReference: created.paymentReference,
+        totalCents: created.totalCents,
+        currency: created.currency,
+        payPath: `/pay/${accessToken}`,
+      };
+    } catch (e) {
+      console.error('建单失败,报名已保留,请在后台补建订单', e);
+    }
+  }
+
+  // action hook:只做副作用(通知、同步到外部系统)。
+  // 失败被 runActions 吞掉并返回 —— 一个 Slack 通知发不出去,
+  // 不该让参会者的报名失败。
+  const hookFailures = await runActions(
+    'registration.afterCreate',
+    { registrationId, email, status, confirmationCode },
+    { organizationId: orgRow!.organizationId, eventId: input.eventId },
+  );
+  for (const f of hookFailures) console.error(`插件 ${f.plugin} 的 afterCreate 失败`, f.error);
+
   return {
     registrationId,
     publicId: encodeId('registration', registrationId),
@@ -214,6 +279,7 @@ export async function submitRegistration(
     confirmationCode,
     trackingPath: `/r/${accessToken}`,
     waitlistPosition,
+    order: orderInfo,
   };
 }
 
@@ -224,6 +290,8 @@ export async function transitionRegistration(
   actor: Actor,
   db: Db = defaultDb,
 ): Promise<void> {
+  let hookInfo: { organizationId: string; eventId: string; from: string } | null = null;
+
   await db.transaction(async (tx) => {
     const [reg] = await tx.select().from(registrations)
       .where(eq(registrations.id, registrationId))
@@ -232,6 +300,18 @@ export async function transitionRegistration(
     if (!reg) throw new RegistrationError('not_found', '报名记录不存在', 404);
 
     assertRegistrationTransition(reg.status as RegStatus, to);
+
+    const [evForHook] = await tx.select({ organizationId: events.organizationId })
+      .from(events).where(eq(events.id, reg.eventId)).limit(1);
+    hookInfo = { organizationId: evForHook!.organizationId, eventId: reg.eventId, from: reg.status };
+
+    // 插件可否决一次迁移(如外部系统尚未放行)。抛出即回滚整个事务 ——
+    // 否决必须发生在写库之前,否则「否决了但状态已经变了」是最糟的结果。
+    await applyFilters(
+      'registration.beforeTransition',
+      { registrationId, from: reg.status, to },
+      { organizationId: evForHook!.organizationId, eventId: reg.eventId },
+    );
 
     const patch: Partial<typeof registrations.$inferInsert> = { status: to, updatedAt: new Date() };
     if (to === 'confirmed') patch.confirmedAt = new Date();
@@ -269,6 +349,16 @@ export async function transitionRegistration(
       payload: { registrationId, from: reg.status, to },
     });
   });
+
+  if (hookInfo) {
+    const info = hookInfo as { organizationId: string; eventId: string; from: string };
+    const failures = await runActions(
+      'registration.afterTransition',
+      { registrationId, from: info.from, to },
+      { organizationId: info.organizationId, eventId: info.eventId },
+    );
+    for (const f of failures) console.error(`插件 ${f.plugin} 的 afterTransition 失败`, f.error);
+  }
 }
 
 /** 追踪页数据(ch05 §5.5:/r/{token} 免登录查询) */
@@ -336,4 +426,56 @@ export async function registrationStats(eventId: string, db: Db = defaultDb) {
   const out: Record<string, number> = {};
   for (const r of rows) out[r.status] = r.n;
   return out;
+}
+
+/**
+ * 候补递补(ch13 §13.5 的 waitlist.promote 动作,也供组织者手动触发)。
+ *
+ * 按候补位次先到先得。递补后的状态由票价决定 —— 免费票直接确认,
+ * 付费票进入待支付并建单,与正常报名走完全相同的路径,
+ * 不为「递补」再造一套状态语义。
+ */
+export async function promoteFromWaitlist(
+  eventId: string,
+  opts: { limit?: number } = {},
+  db: Db = defaultDb,
+): Promise<number> {
+  const limit = Math.max(1, Math.min(opts.limit ?? 1, 100));
+
+  const queue = await db.select({
+    id: registrations.id, ticketId: registrations.ticketId, email: registrations.email,
+    userId: registrations.userId,
+  }).from(registrations)
+    .where(and(eq(registrations.eventId, eventId), eq(registrations.status, 'waitlisted')))
+    .orderBy(asc(registrations.waitlistPosition), asc(registrations.createdAt))
+    .limit(limit);
+
+  let promoted = 0;
+  for (const r of queue) {
+    const [ticket] = r.ticketId
+      ? await db.select().from(tickets).where(eq(tickets.id, r.ticketId)).limit(1)
+      : [undefined];
+    const priceCents = ticket?.priceCents ?? 0;
+
+    try {
+      if (priceCents > 0) {
+        await transitionRegistration(r.id, 'awaiting_payment', { type: 'system' }, db);
+        const { createOrder } = await import('./payment');
+        await createOrder({
+          eventId, registrationId: r.id, method: 'bank_transfer',
+          email: r.email, userId: r.userId, actor: { type: 'system' },
+        }, db).catch((e) => console.error('递补建单失败,报名已递补', e));
+      } else {
+        await transitionRegistration(r.id, 'confirmed', { type: 'system' }, db);
+      }
+      await db.update(registrations)
+        .set({ waitlistPosition: null, updatedAt: new Date() })
+        .where(eq(registrations.id, r.id));
+      promoted += 1;
+    } catch (e) {
+      // 单个人递补失败不该阻断队列后面的人
+      console.error('递补失败', r.id, e);
+    }
+  }
+  return promoted;
 }

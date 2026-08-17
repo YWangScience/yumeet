@@ -1,12 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import {
   getEventBySlug, getRegistrationByCode, transitionRegistration,
   InvalidTransitionError, RegistrationError, REGISTRATION_LABELS,
-  type RegStatus,
+  ForbiddenError, type RegStatus,
 } from '@yumeet/core';
+import { actorWithCapability, UnauthenticatedError } from '@/lib/authz';
 
 export interface CheckinResult {
   ok: boolean;
@@ -22,10 +22,11 @@ export async function checkinByCodeAction(input: {
   const found = await getEventBySlug(input.orgSlug, input.eventSlug);
   if (!found) return { ok: false, error: '活动不存在' };
 
-  const hdrs = await headers();
-  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
-
   try {
+    // 签到台是志愿者也能用的岗位,但必须是被授予的人 ——
+    // 确认码在胸牌上是明文,不设门槛等于谁都能替别人签到
+    const actor = await actorWithCapability(found.event.id, 'onsite.checkin');
+
     const reg = await getRegistrationByCode(found.event.id, input.code);
     if (!reg) return { ok: false, error: '确认码无效' };
 
@@ -37,10 +38,12 @@ export async function checkinByCodeAction(input: {
     const answers = reg.answers as Record<string, unknown>;
     const name = typeof answers['full_name'] === 'string' ? answers['full_name'] : reg.email;
 
-    await transitionRegistration(reg.id, 'checked_in', { type: 'user', ip });
+    await transitionRegistration(reg.id, 'checked_in', actor);
     revalidatePath(`/manage/${input.orgSlug}/${input.eventSlug}/checkin`);
     return { ok: true, name };
   } catch (e) {
+    if (e instanceof UnauthenticatedError) return { ok: false, error: '请先登录' };
+    if (e instanceof ForbiddenError) return { ok: false, error: '没有签到权限' };
     if (e instanceof InvalidTransitionError) {
       return {
         ok: false,

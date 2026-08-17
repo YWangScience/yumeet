@@ -1,0 +1,19 @@
+{
+  "name": "stripe",
+  "version": "0.1.0",
+  "description": { "zh": "Stripe Checkout 在线支付", "en": "Stripe Checkout online payments" },
+  "hooks": ["payment.beforeCreateOrder", "payment.afterPaid"],
+  "provides": ["payment:stripe", "rule.action:stripe.refund"],
+  "uiSlots": ["manage.payments.settings"],
+  "permissions": ["registrations:read", "orders:write", "email:send"],
+  "network": { "allowlist": ["api.stripe.com"] },
+  "configSchema": {
+    "type": "object",
+    "required": ["secretKey", "webhookSecret"],
+    "properties": {
+      "secretKey": { "type": "string", "title": "Secret key", "format": "password" },
+      "webhookSecret": { "type": "string", "title": "Webhook signing secret", "format": "password" },
+      "statementDescriptor": { "type": "string", "title": "账单显示名", "maxLength": 22 }
+    }
+  }
+}

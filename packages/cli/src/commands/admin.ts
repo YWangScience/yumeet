@@ -76,7 +76,8 @@ export async function adminCmd(argv: string[]): Promise<number> {
     }
   }
 
-  const issued = await issueMagicLink(normalized, 'login');
+  // 应急通道不受防滥用限流约束(见 issueMagicLink 的 skipRateLimit 注释)
+  const issued = await issueMagicLink(normalized, 'login', undefined, { skipRateLimit: true });
   const base = process.env['YUMEET_PUBLIC_URL'] ?? 'https://yumeet.ywang.science';
   const link = `${base}/auth/verify?token=${issued.token}`;
 

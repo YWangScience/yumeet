@@ -17,6 +17,11 @@ export * from './services/auth';
 export * from './services/retention';
 export * from './services/gdpr';
 export * from './services/payment';
+export type { PaymentConfig, I18nString, RuleAction, RuleCondition, PluginManifest } from '@yumeet/db';
 /* 现场模式:胸牌、会场屏、实时公告(ch05 §5.2) */
 export * from './services/onsite';
 export * from './services/members';
+/* 插件与自动化(ch13 §13.4-13.5) */
+export * from './plugins/registry';
+export * from './rules/jsonlogic';
+export * from './rules/engine';

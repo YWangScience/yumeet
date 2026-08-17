@@ -16,7 +16,7 @@ import { randomBytes } from 'node:crypto';
 import { and, eq, sql, desc, count, inArray } from 'drizzle-orm';
 import {
   db as defaultDb, orders, registrations, tickets, events, users, outbox,
-  type Db,
+  type Db, type PaymentConfig,
 } from '@yumeet/db';
 import { audit } from '../audit/index';
 import { transitionRegistration, type Actor } from './registration';
@@ -325,6 +325,114 @@ export const METHOD_LABELS: Record<PaymentMethod, { zh: string; en: string }> = 
   onsite: { zh: '现场支付', en: 'Pay on site' },
   free: { zh: '免费', en: 'Free' },
 };
+
+/** 读取活动的收款配置(后台设置表单用) */
+export async function getPaymentConfig(
+  eventId: string,
+  db: Db = defaultDb,
+): Promise<PaymentConfig | null> {
+  const [ev] = await db.select({ paymentConfig: events.paymentConfig })
+    .from(events).where(eq(events.id, eventId)).limit(1);
+  return ev?.paymentConfig ?? null;
+}
+
+/**
+ * 保存收款配置。
+ *
+ * 这些字段直接决定参会者「往哪付钱」,写错一位账号就是一笔汇丢的款,
+ * 所以整份配置进审计链 —— 改过什么、谁改的,事后查得到。
+ */
+export async function savePaymentConfig(
+  eventId: string,
+  cfg: PaymentConfig,
+  actor: Actor,
+  db: Db = defaultDb,
+): Promise<void> {
+  const [ev] = await db.select({
+    organizationId: events.organizationId, paymentConfig: events.paymentConfig,
+  }).from(events).where(eq(events.id, eventId)).limit(1);
+  if (!ev) throw new PaymentError('event_not_found', '活动不存在', 404);
+
+  await db.transaction(async (tx) => {
+    await tx.update(events).set({ paymentConfig: cfg, updatedAt: new Date() })
+      .where(eq(events.id, eventId));
+    await audit(tx as unknown as Db, {
+      organizationId: ev.organizationId,
+      eventId,
+      actorType: actor.type,
+      actorId: actor.id ?? null,
+      action: 'payment.config_updated',
+      targetType: 'event',
+      targetId: eventId,
+      diff: { before: ev.paymentConfig, after: cfg },
+      ip: actor.ip ?? null,
+    });
+  });
+}
+
+/**
+ * 参会者自助切换付款方式。
+ *
+ * 报名时不问「你打算怎么付」—— 多问一步就多一次流失,建单先落一个默认方式,
+ * 到付款页再让人挑。参考号沿用同一枚:一次报名对应一个参考号,
+ * 换方式不该让人手上的号作废,财务对账也只认这一个。
+ */
+export async function switchOrderMethod(
+  orderId: string,
+  method: PaymentMethod,
+  actor: Actor,
+  db: Db = defaultDb,
+): Promise<void> {
+  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) throw new PaymentError('order_not_found', '订单不存在', 404);
+  if (order.status !== 'pending') {
+    throw new PaymentError('order_not_pending', '订单已结清或已作废,不能改付款方式', 409);
+  }
+  if (order.method === method) return;
+
+  const [ev] = await db.select({
+    organizationId: events.organizationId, paymentConfig: events.paymentConfig,
+  }).from(events).where(eq(events.id, order.eventId)).limit(1);
+  if (!ev) throw new PaymentError('event_not_found', '活动不存在', 404);
+
+  // 'free' 不是可选的付款方式,它是免费票的记账结果
+  if (method === 'free') {
+    throw new PaymentError('method_not_selectable', '不能改为免费', 400);
+  }
+  const enabled = ev.paymentConfig?.enabled ?? [];
+  if (enabled.length > 0 && !enabled.includes(method)) {
+    throw new PaymentError('method_not_enabled', '该活动未开放这种付款方式', 400);
+  }
+
+  // 线上/线下的时效差一个量级,换方式必须跟着换期限,
+  // 否则对公转账只剩 30 分钟,或在线支付挂着 14 天占位。
+  const offline = isOffline(method);
+  const expiresAt = offline
+    ? new Date(Date.now() + OFFLINE_ORDER_TTL_DAYS * 86400_000)
+    : new Date(Date.now() + ONLINE_ORDER_TTL_MINUTES * 60_000);
+
+  await db.transaction(async (tx) => {
+    await tx.update(orders).set({
+      method,
+      provider: method === 'stripe' ? 'stripe' : null,
+      paymentReference: order.paymentReference ?? (offline ? generatePaymentReference() : null),
+      expiresAt,
+      updatedAt: new Date(),
+    }).where(eq(orders.id, orderId));
+
+    await audit(tx as unknown as Db, {
+      organizationId: ev.organizationId,
+      eventId: order.eventId,
+      actorType: actor.type,
+      actorId: actor.id ?? null,
+      action: 'order.method_changed',
+      targetType: 'order',
+      targetId: orderId,
+      diff: { from: order.method, to: method },
+      ip: actor.ip ?? null,
+    });
+  });
+}
 
 /** 付款说明页用:凭报名 token 取订单与活动的支付配置 */
 export async function getOrderForRegistration(

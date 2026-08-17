@@ -65,7 +65,7 @@ export async function submitRegistrationAction(
   const hdrs = await headers();
   const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
 
-  let trackingPath: string;
+  let nextPath: string;
   try {
     const result = await submitRegistration({
       eventId: found.event.id,
@@ -75,7 +75,11 @@ export async function submitRegistrationAction(
       ticketId,
       actor: { type: 'user', ip },
     });
-    trackingPath = result.trackingPath;
+    // 付费票直接送到付款说明页 —— 参考号与账户信息在那里,
+    // 让人先看追踪页再自己找付款入口是多余的一步
+    // ?new=1 让付款页先给一句「报名已收到」再讲付款 ——
+    // 少了这句,刚提交完的人只看到一张账单,会以为报名没成功。
+    nextPath = result.order ? `${result.order.payPath}?new=1` : result.trackingPath;
   } catch (e) {
     if (e instanceof RegistrationError) {
       return { ok: false, error: e.message };
@@ -85,6 +89,6 @@ export async function submitRegistrationAction(
   }
 
   revalidatePath(`/${orgSlug}/${eventSlug}`);
-  // 报名成功 → 直接进追踪页(状态透明原则)
-  redirect(trackingPath);
+  // 报名成功 → 付费票进付款页,免费票进追踪页(状态透明原则)
+  redirect(nextPath);
 }

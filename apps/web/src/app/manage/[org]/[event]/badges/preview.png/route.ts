@@ -5,6 +5,7 @@
  * 字节流 —— 预览不做第二套 HTML 仿真,所见即所印。
  */
 import { getEventBySlug, buildBadgeModel, renderBadgePng, isBadgeLayout } from '@yumeet/core';
+import { guardRoute } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,6 +24,10 @@ export async function GET(
 
   const found = await getEventBySlug(org, event);
   if (!found) return new Response('not found', { status: 404 });
+
+  // 胸牌上有姓名与单位:必须先确认调用者是现场工作人员
+  const denied = await guardRoute(found.event.id, 'onsite.checkin');
+  if (denied) return denied;
 
   // 确认码在活动内查找 —— 跨活动的码取不到别人的胸牌(ch12 §12.1 对象级授权)
   const model = await buildBadgeModel(found.event.id, { code });

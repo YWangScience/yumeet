@@ -18,5 +18,8 @@ export type {
   ScreenState, ScreenSession, Announcement, AnnouncementLevel,
 } from './services/onsite';
 
+// 收款配置的形状(后台配置表单要按它渲染字段;实现在服务端入口)
+export type { PaymentConfig, I18nString } from '@yumeet/db';
+
 // 角色常量(渲染下拉与权限说明表)
 export * from './roles';

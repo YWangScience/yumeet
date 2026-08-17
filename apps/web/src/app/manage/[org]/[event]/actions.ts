@@ -1,11 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import {
-  transitionRegistration, InvalidTransitionError, RegistrationError,
-  type RegStatus,
+  getEventBySlug, transitionRegistration, InvalidTransitionError,
+  RegistrationError, ForbiddenError, type RegStatus,
 } from '@yumeet/core';
+import { actorWithCapability, UnauthenticatedError } from '@/lib/authz';
 
 export interface TransitionResult {
   ok: boolean;
@@ -22,16 +22,15 @@ export async function transitionRegistrationAction(input: {
   orgSlug: string;
   eventSlug: string;
 }): Promise<TransitionResult> {
-  const hdrs = await headers();
-  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+  const found = await getEventBySlug(input.orgSlug, input.eventSlug);
+  if (!found) return { ok: false, error: '活动不存在' };
 
   try {
-    await transitionRegistration(input.registrationId, input.to, {
-      type: 'user',
-      id: null, // M1:后台尚未接入登录,审计记录为匿名组织者
-      ip,
-    });
+    const actor = await actorWithCapability(found.event.id, 'registration.manage');
+    await transitionRegistration(input.registrationId, input.to, actor);
   } catch (e) {
+    if (e instanceof UnauthenticatedError) return { ok: false, error: '请先登录' };
+    if (e instanceof ForbiddenError) return { ok: false, error: '没有管理报名的权限' };
     if (e instanceof InvalidTransitionError) {
       return { ok: false, error: `不能从「${e.from}」变更为「${e.to}」` };
     }

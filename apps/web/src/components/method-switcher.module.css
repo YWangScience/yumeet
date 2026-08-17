@@ -1,0 +1,69 @@
+.card {
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-5);
+  background: var(--yu-color-bg-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  letter-spacing: var(--yu-text-headline-tracking);
+  line-height: var(--yu-text-headline-leading);
+  color: var(--yu-color-text-primary);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+}
+
+.option,
+.optionActive {
+  padding: 10px var(--yu-space-4);
+  border-radius: var(--yu-radius-pill);
+  border: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-callout-size);
+  font-weight: var(--yu-text-callout-weight);
+  letter-spacing: var(--yu-text-callout-tracking);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--yu-color-accent);
+}
+
+.optionActive {
+  composes: option;
+  background: var(--yu-color-accent);
+  border-color: var(--yu-color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.option:disabled,
+.optionActive:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.option:focus-visible,
+.optionActive:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--yu-text-callout-size);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-danger-text);
+}

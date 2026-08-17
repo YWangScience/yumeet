@@ -47,3 +47,36 @@ export async function capabilitiesFor(eventId: string): Promise<Set<Capability>>
   const g = await grantsFor(user.id, eventId);
   return g.capabilities;
 }
+
+/**
+ * Route Handler 的能力守卫。
+ *
+ * 页面靠 requirePageCapability + layout 兜底,但 **layout 不覆盖 Route Handler** ——
+ * /manage 下的 .csv / .zip / .png 三条导出路由曾因此完全裸奔。
+ * 这里返回 Response 而不是 redirect:导出接口的调用方是 <img>/<a download>,
+ * 收到 302 只会得到一张坏图,401/403 才能让人看懂发生了什么。
+ */
+export async function guardRoute(
+  eventId: string,
+  capability: Capability,
+): Promise<Response | null> {
+  const user = await currentUser();
+  if (!user) {
+    return new Response('unauthorized', {
+      status: 401,
+      headers: { 'cache-control': 'no-store' },
+    });
+  }
+  try {
+    await requireCapability(user.id, eventId, capability);
+    return null;
+  } catch (e) {
+    if (e instanceof ForbiddenError) {
+      return new Response('forbidden', {
+        status: 403,
+        headers: { 'cache-control': 'no-store' },
+      });
+    }
+    throw e;
+  }
+}

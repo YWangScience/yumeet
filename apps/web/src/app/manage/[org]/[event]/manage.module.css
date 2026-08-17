@@ -27,7 +27,15 @@
 }
 .filter:hover { border-color: var(--yu-color-accent-text); color: var(--yu-color-text-primary); text-decoration: none; }
 .filterActive { background: var(--yu-color-accent); border-color: var(--yu-color-accent-text); color: #fff; }
-.filterCount { font-variant-numeric: tabular-nums; opacity: 0.75; margin-left: 4px; }
+/* 计数要比标签轻一档,但**不能用 opacity** —— 选中态是白字压 #0071e3,
+   本就只剩 4.7:1,再乘 0.75 就掉到 3.31,不达 WCAG AA。
+   改用字重与字距做层级,颜色始终继承父元素。 */
+.filterCount {
+  font-variant-numeric: tabular-nums;
+  margin-left: 5px;
+  font-weight: 400;
+  font-size: 0.92em;
+}
 
 .tableWrap { overflow-x: auto; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
 .table { width: 100%; border-collapse: collapse; font-size: var(--yu-text-footnote-size); }

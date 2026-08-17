@@ -1,15 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import {
   getEventBySlug, updateEventTheme, UnknownThemeError, ThemeUpdateError,
+  ForbiddenError,
 } from '@yumeet/core';
+import { actorWithCapability, UnauthenticatedError } from '@/lib/authz';
 
 export interface DesignActionState {
   ok: boolean;
   /** 失败原因(已本地化的键由页面负责取词,这里只给稳定的错误码) */
-  error?: 'not_found' | 'unknown_theme' | 'failed';
+  error?: 'not_found' | 'unknown_theme' | 'failed' | 'forbidden';
   /** 成功保存的时间戳,用于让客户端区分「同一结果的再次提交」 */
   savedAt?: number;
   /** 被净化流程丢弃的覆盖项数量 */
@@ -42,15 +43,10 @@ export async function saveEventThemeAction(
     // 非法 JSON 视为「无覆盖」——core 的净化层同样会兜底,这里只是少一次往返
   }
 
-  const hdrs = await headers();
-  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
-
   try {
+    const actor = await actorWithCapability(found.event.id, 'design.edit');
     const result = await updateEventTheme({
-      eventId: found.event.id,
-      themeId,
-      overrides,
-      actor: { type: 'user', id: null, ip }, // M1:后台尚未接入登录,审计记为匿名组织者
+      eventId: found.event.id, themeId, overrides, actor,
     });
 
     revalidatePath(`/manage/${orgSlug}/${eventSlug}/design`);
@@ -60,6 +56,9 @@ export async function saveEventThemeAction(
 
     return { ok: true, savedAt: Date.now(), rejected: result.rejected.length };
   } catch (e) {
+    if (e instanceof UnauthenticatedError || e instanceof ForbiddenError) {
+      return { ok: false, error: 'forbidden' };
+    }
     if (e instanceof UnknownThemeError) return { ok: false, error: 'unknown_theme' };
     if (e instanceof ThemeUpdateError) return { ok: false, error: 'not_found' };
     console.error('保存主题失败', e);

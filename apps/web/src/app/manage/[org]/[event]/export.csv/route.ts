@@ -5,6 +5,7 @@ import {
   type RegStatus, type FormField,
 } from '@yumeet/core';
 import { db } from '@yumeet/db';
+import { guardRoute, currentUser } from '@/lib/session';
 
 /**
  * 名单导出(ch09 §9.3:按提交当时的 form_version 解释 answers)
@@ -17,6 +18,10 @@ export async function GET(
   const { org: orgSlug, event: eventSlug } = await ctx.params;
   const found = await getEventBySlug(orgSlug, eventSlug);
   if (!found) notFound();
+
+  // 名单 CSV 含邮箱等个人数据,导出是一项独立能力(ch12 §12.1)
+  const denied = await guardRoute(found.event.id, 'registration.export');
+  if (denied) return denied;
 
   const { event } = found;
   const [forms, tickets, list] = await Promise.all([
@@ -46,10 +51,13 @@ export async function GET(
     ];
   });
 
+  // 「谁把全场名单拉走了」是审计里最该答得上来的问题之一
+  const actor = await currentUser();
   await audit(db, {
     organizationId: found.org.id,
     eventId: event.id,
     actorType: 'user',
+    actorId: actor?.id ?? null,
     action: 'registration.exported',
     targetType: 'event',
     targetId: event.id,

@@ -1,15 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import {
   assignReviewers, decideSubmission, transitionSubmission, decodeId,
+  getEventBySlug,
 } from '@yumeet/core';
 import { toFeedback, type ActionFeedback } from '@/app/[org]/[event]/cfp/errors';
+import { actorWithCapability, actorForSubmission } from '@/lib/authz';
 
-async function actorIp(): Promise<string | null> {
-  const hdrs = await headers();
-  return hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+/** 每个 action 都要先把 slug 解析成 eventId 才能谈权限 */
+async function eventIdOf(orgSlug: string, eventSlug: string): Promise<string | null> {
+  const found = await getEventBySlug(orgSlug, eventSlug);
+  return found?.event.id ?? null;
 }
 
 /**
@@ -25,7 +27,15 @@ export async function assignReviewersAction(input: {
   if (input.submissionIds.length === 0) return { ok: false, errorKey: 'noSelection' };
   if (input.reviewerIds.length === 0) return { ok: false, errorKey: 'errNoReviewer' };
 
-  const ip = await actorIp();
+  const eventId = await eventIdOf(input.orgSlug, input.eventSlug);
+  if (!eventId) return { ok: false, errorKey: 'errSubmissionNotFound' };
+
+  let actor;
+  try {
+    // 分派审稿人是大会层的编排动作,不下放给分会主席
+    actor = await actorWithCapability(eventId, 'submission.manage');
+  } catch (e) { return toFeedback(e); }
+
   let reviewerUuids: string[];
   let submissionUuids: string[];
   try {
@@ -41,7 +51,7 @@ export async function assignReviewersAction(input: {
 
   for (const id of submissionUuids) {
     try {
-      const res = await assignReviewers(id, reviewerUuids, { type: 'user', id: null, ip });
+      const res = await assignReviewers(id, reviewerUuids, actor);
       assigned += 1;
       skipped += res.skipped.length;
     } catch (e) {
@@ -64,13 +74,15 @@ export async function decideSubmissionAction(input: {
   orgSlug: string;
   eventSlug: string;
 }): Promise<ActionFeedback> {
-  const ip = await actorIp();
+  const eventId = await eventIdOf(input.orgSlug, input.eventSlug);
+  if (!eventId) return { ok: false, errorKey: 'errSubmissionNotFound' };
+
   try {
+    const submissionId = decodeId('submission', input.submissionId);
+    // 大会层有全局 submission.decide 直接过;分会主席只在自己分会的稿件上过
+    const actor = await actorForSubmission(eventId, submissionId, 'submission.decide');
     await decideSubmission(
-      decodeId('submission', input.submissionId),
-      input.decision,
-      { type: 'user', id: null, ip },
-      { waitlisted: input.waitlisted },
+      submissionId, input.decision, actor, { waitlisted: input.waitlisted },
     );
   } catch (e) {
     return toFeedback(e);
@@ -86,13 +98,14 @@ export async function transitionSubmissionAction(input: {
   orgSlug: string;
   eventSlug: string;
 }): Promise<ActionFeedback> {
-  const ip = await actorIp();
+  const eventId = await eventIdOf(input.orgSlug, input.eventSlug);
+  if (!eventId) return { ok: false, errorKey: 'errSubmissionNotFound' };
+
   try {
-    await transitionSubmission(
-      decodeId('submission', input.submissionId),
-      input.to,
-      { type: 'user', id: null, ip },
-    );
+    const submissionId = decodeId('submission', input.submissionId);
+    // 「要求修改 / 撤回 / 排入日程」与录用同属对稿件的处置,按同一范围校验
+    const actor = await actorForSubmission(eventId, submissionId, 'submission.decide');
+    await transitionSubmission(submissionId, input.to, actor);
   } catch (e) {
     return toFeedback(e);
   }

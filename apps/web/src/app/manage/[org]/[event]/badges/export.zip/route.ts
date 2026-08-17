@@ -7,6 +7,9 @@
  */
 import { getEventBySlug, renderBadgeBatchZip, isBadgeLayout } from '@yumeet/core';
 import { REGISTRATION_LABELS, type RegStatus } from '@yumeet/core';
+import { guardRoute, currentUser } from '@/lib/session';
+import { audit } from '@yumeet/core';
+import { db } from '@yumeet/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,10 +33,28 @@ export async function GET(
   const found = await getEventBySlug(org, event);
   if (!found) return new Response('not found', { status: 404 });
 
+  // 一次导出全场参会者的姓名与单位,权限门槛按现场管理算
+  const denied = await guardRoute(found.event.id, 'onsite.manage');
+  if (denied) return denied;
+
   const { zip, count } = await renderBadgeBatchZip(found.event.id, {
     statuses: isRegStatus(statusParam) ? [statusParam] : undefined,
     layout,
     limit: 2000,
+  });
+
+  // 与 CSV 导出同理:整场姓名与单位出库,必须留痕
+  const actor = await currentUser();
+  await audit(db, {
+    organizationId: found.org.id,
+    eventId: found.event.id,
+    actorType: 'user',
+    actorId: actor?.id ?? null,
+    action: 'badges.exported',
+    targetType: 'event',
+    targetId: found.event.id,
+    diff: { count, layout, format: 'zip' },
+    ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   });
 
   const stamp = new Date().toISOString().slice(0, 10);

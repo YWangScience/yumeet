@@ -1,4 +1,5 @@
-import { InvalidTransitionError, SubmissionError } from '@yumeet/core';
+import { InvalidTransitionError, SubmissionError, ForbiddenError } from '@yumeet/core';
+import { UnauthenticatedError } from '@/lib/authz';
 import type { TKey } from '@/lib/i18n';
 
 /**
@@ -45,6 +46,14 @@ const CODE_TO_KEY: Record<string, TKey> = {
 
 /** core 抛出的错误 → 面向用户的词条键(ch09 §9.4:非法迁移映射为友好提示) */
 export function toFeedback(e: unknown): ActionFeedback {
+  // 授权失败要与业务失败区分开:让分会主席明白「不是操作不合法,
+  // 是这篇稿子不归你管」,而不是笼统的「操作失败」。
+  if (e instanceof UnauthenticatedError) {
+    return { ok: false, errorKey: 'errSignInRequired' };
+  }
+  if (e instanceof ForbiddenError) {
+    return { ok: false, errorKey: 'errNoPermission' };
+  }
   if (e instanceof InvalidTransitionError) {
     return { ok: false, errorKey: 'invalidTransition', transition: { from: e.from, to: e.to } };
   }

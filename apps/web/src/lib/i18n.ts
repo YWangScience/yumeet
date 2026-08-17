@@ -414,6 +414,33 @@ const T = {
   markAsPaid: { zh: '确认到账', en: 'Mark as paid' },
   reconcileNote: { zh: '核销备注(如流水号)', en: 'Note (e.g. transaction ref)' },
   noPendingPayments: { zh: '没有待核销的线下付款。', en: 'No offline payments awaiting reconciliation.' },
+  errSignInRequired: { zh: '请先登录后再操作。', en: 'Please sign in first.' },
+  errNoPermission: {
+    zh: '你没有这项操作的权限 —— 分会主席只能处理自己分会的内容。',
+    en: 'You do not have permission for this action — session chairs can only act on their own track.',
+  },
+  registrationReceived: { zh: '报名已收到', en: 'Registration received' },
+  registrationReceivedBody: {
+    zh: '你的确认码是 {code}。名额已为你保留,完成下方付款后即自动确认。',
+    en: 'Your confirmation code is {code}. Your place is held; it is confirmed automatically once payment below is complete.',
+  },
+  automation: { zh: '自动化', en: 'Automation' },
+  paymentSettings: { zh: '收款设置', en: 'Payment settings' },
+  paymentSettingsLede: {
+    zh: '这里填写的账户与说明会直接显示在参会者的付款页上。',
+    en: 'The accounts and notes entered here appear directly on the attendee payment page.',
+  },
+  paymentNotConfigured: {
+    zh: '尚未配置收款方式 —— 参会者的付款页现在看不到任何账户信息。',
+    en: 'No payment method configured yet — attendees currently see no account details.',
+  },
+  choosePaymentMethod: { zh: '选择付款方式', en: 'Choose how to pay' },
+  switchMethod: { zh: '改用这种方式', en: 'Use this method' },
+  methodSwitched: { zh: '付款方式已更新', en: 'Payment method updated' },
+  paymentNotSetUp: {
+    zh: '主办方尚未公布收款账户,请通过下方联系方式咨询。',
+    en: 'The organiser has not published payment details yet. Please contact them below.',
+  },
   searchByReference: { zh: '按参考号查找', en: 'Find by reference' },
 
   // 归档概览

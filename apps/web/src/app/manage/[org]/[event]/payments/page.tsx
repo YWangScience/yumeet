@@ -2,13 +2,15 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
   getEventBySlug, listPendingOfflineOrders, findOrderByReference,
-  METHOD_LABELS, encodeId, type PaymentMethod,
+  METHOD_LABELS, encodeId, getPaymentConfig, type PaymentMethod,
 } from '@yumeet/core';
-import { requirePageCapability } from '@/lib/session';
+import { requirePageCapability, capabilitiesFor } from '@/lib/session';
 import { resolveLocale } from '@/lib/locale-server';
 import { translator } from '@/lib/i18n';
 import { formatMoney } from '@/lib/format';
 import { ReconcileRow } from '@/components/reconcile-row';
+import { PaymentConfigForm } from '@/components/payment-config-form';
+import { savePaymentConfigAction } from './actions';
 import styles from './payments.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +38,9 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
   );
 
   const queue = await listPendingOfflineOrders(found.event.id, { limit: 100 });
+  const payCfg = await getPaymentConfig(found.event.id);
+  // 配置区只对能改活动设置的人显示;真正的边界在 action 内(ch12 §12.1)
+  const canConfigure = (await capabilitiesFor(found.event.id)).has('event.edit');
   const searched = sp.ref?.trim()
     ? await findOrderByReference(found.event.id, sp.ref)
     : null;
@@ -110,6 +115,22 @@ export default async function PaymentsPage({ params, searchParams }: Props) {
           </div>
         )}
       </section>
+
+      {canConfigure && (
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>{tt('paymentSettings')}</h2>
+          </div>
+          <p className={styles.configLede}>{tt('paymentSettingsLede')}</p>
+          {!payCfg && (
+            <p className={styles.configWarn} role="alert">{tt('paymentNotConfigured')}</p>
+          )}
+          <PaymentConfigForm
+            config={payCfg}
+            action={savePaymentConfigAction.bind(null, orgSlug, eventSlug)}
+          />
+        </section>
+      )}
     </main>
   );
 }

@@ -72,6 +72,17 @@ export async function issueMagicLink(
   emailRaw: string,
   purpose: TokenPurpose = 'login',
   db: Db = defaultDb,
+  opts: {
+    /**
+     * 跳过频率限制。
+     *
+     * 只给 CLI 用:限流防的是「拿到一个邮箱就狂刷登录信」的匿名请求,
+     * 而 CLI 的调用者已经握着 DATABASE_URL —— 对他而言限流挡不住任何事,
+     * 只会在邮件系统故障时把唯一的应急通道也锁上(ch11 §11.3 的存在意义)。
+     * 绝不可从任何 HTTP 入口传 true。
+     */
+    skipRateLimit?: boolean;
+  } = {},
 ): Promise<MagicLinkIssued> {
   const email = normalizeEmail(emailRaw);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -83,7 +94,7 @@ export async function issueMagicLink(
     .select({ n: count() })
     .from(loginTokens)
     .where(and(eq(loginTokens.email, email), gt(loginTokens.createdAt, since)));
-  if (n >= RATE_LIMIT_MAX) {
+  if (n >= RATE_LIMIT_MAX && !opts.skipRateLimit) {
     throw new AuthError('rate_limited', '请求过于频繁,请 15 分钟后再试', 429);
   }
 
@@ -277,12 +288,14 @@ const ORG_ROLE_CAPS: Record<string, Capability[]> = {
   owner: ['event.view', 'event.edit', 'event.publish', 'event.delete',
     'registration.view', 'registration.manage', 'registration.export',
     'submission.view', 'submission.manage', 'submission.decide',
-    'schedule.edit', 'schedule.publish', 'design.edit', 'onsite.checkin',
+    'schedule.edit', 'schedule.publish', 'design.edit',
+    'onsite.checkin', 'onsite.manage',
     'member.manage', 'webhook.manage', 'privacy.manage'],
   admin: ['event.view', 'event.edit', 'event.publish',
     'registration.view', 'registration.manage', 'registration.export',
     'submission.view', 'submission.manage', 'submission.decide',
-    'schedule.edit', 'schedule.publish', 'design.edit', 'onsite.checkin',
+    'schedule.edit', 'schedule.publish', 'design.edit',
+    'onsite.checkin', 'onsite.manage',
     'member.manage', 'webhook.manage'],
   member: ['event.view'],
 };

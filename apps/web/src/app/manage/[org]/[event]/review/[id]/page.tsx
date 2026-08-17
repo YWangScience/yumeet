@@ -88,7 +88,6 @@ export default async function ReviewFormPage({ params, searchParams }: Props) {
         orgSlug={orgSlug}
         eventSlug={eventSlug}
         submissionId={submission.publicId}
-        reviewerId={encodeId('user', me.id)}
         locale={locale}
         dimensions={config.dimensions.map((d) => ({
           key: d.key,

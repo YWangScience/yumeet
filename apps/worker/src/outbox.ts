@@ -14,7 +14,7 @@
  */
 import {
   buildEventObject, claimOutboxBatch, listWebhooksForTopic, markOutboxProcessed,
-  newDeliveryId, isWebhookEvent, type OutboxRow,
+  newDeliveryId, isWebhookEvent, runRulesForEvent, isTrigger, type OutboxRow,
 } from '@yumeet/core';
 import { db, events } from '@yumeet/db';
 import { eq } from 'drizzle-orm';
@@ -95,6 +95,51 @@ async function fanOut(row: OutboxRow, queues: Queues): Promise<void> {
     await queues.email.add(mail.template, mail, {
       ...emailJobOptions, jobId: emailJobId(row.id, mail.to),
     });
+  }
+
+  // ---- 3. 自动化规则(ch13 §13.5)----
+  await runRules(row, object);
+}
+
+/**
+ * 把一条 outbox 记录喂给规则引擎。
+ *
+ * 规则失败**不**让整行 outbox 重投:邮件与 webhook 已经发出去了,
+ * 为了一条写错的规则把它们重发一遍是更坏的结果。
+ * 规则自身的失败落在 rule_runs 与规则的 failures 计数上,组织者在后台能看到。
+ */
+async function runRules(row: OutboxRow, object: Record<string, unknown>): Promise<void> {
+  if (!row.eventId || !isTrigger(row.topic)) return;
+
+  // 规则动作产生的事件带 depth,超过 MAX_DEPTH 不再触发,杜绝循环
+  const depth = Number(row.payload['depth'] ?? 0);
+
+  const entityId = String(
+    row.payload['registrationId'] ?? row.payload['submissionId']
+    ?? object['id'] ?? row.id,
+  );
+
+  try {
+    const results = await runRulesForEvent(
+      {
+        organizationId: row.organizationId,
+        eventId: row.eventId,
+        trigger: row.topic,
+        // 规则条件里写 {"var":"ticket.code"} 取的是这个对象
+        payload: { ...row.payload, ...object },
+      },
+      { triggerEventId: row.id, entityId, depth },
+      db,
+    );
+    const fired = results.filter((r) => r.matched);
+    if (fired.length) {
+      log.info('自动化规则已执行', {
+        outboxId: row.id, topic: row.topic,
+        rules: fired.map((r) => r.ruleName), depth,
+      });
+    }
+  } catch (e) {
+    log.error('自动化规则执行失败', { outboxId: row.id, topic: row.topic, ...errFields(e) });
   }
 }
 

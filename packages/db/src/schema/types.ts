@@ -132,3 +132,37 @@ export interface SessionSpeaker {
   affiliation?: string;
   userId?: string;
 }
+
+/* ── 插件与自动化(ch13 §13.4–13.5)────────────────────────────── */
+
+/** 插件清单。安装前把它整份展示给管理员:声明了什么权限、要连哪些域名。 */
+export interface PluginManifest {
+  name: string;
+  version: string;
+  description?: I18nString;
+  /** 注册的 hook 名,与 HOOKS 总表对应 */
+  hooks?: string[];
+  /** 注册的能力实现,如 payment provider */
+  provides?: string[];
+  /** 注入的界面位置 */
+  uiSlots?: string[];
+  /** 裁剪 Plugin API 的权限,与能力表同源 */
+  permissions?: string[];
+  network?: { allowlist?: string[] };
+  /** 配置项的 JSON Schema,后台据此生成表单 */
+  configSchema?: Record<string, unknown>;
+}
+
+/** JsonLogic 子集:==、!=、>、<、>=、<=、in、and、or、var */
+export type RuleCondition = Record<string, unknown>;
+
+/** then 段的一个动作 */
+export interface RuleAction {
+  type:
+    | 'email.send' | 'tag.add' | 'tag.remove' | 'registration.approve'
+    | 'waitlist.promote' | 'field.set' | 'webhook.call'
+    /** 插件经 rule.action provider 注册的动作 */
+    | string;
+  /** 动作参数,形状由动作类型决定 */
+  params?: Record<string, unknown>;
+}

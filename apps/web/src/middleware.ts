@@ -29,8 +29,12 @@ export function middleware(req: NextRequest) {
     || pathname.startsWith('/_next/')
     || pathname.startsWith('/embed')
     || pathname === '/embed.js'
+    // 平台级路由:凭 token 或会话访问,不属于任何一个活动的路径空间。
+    // 漏掉任何一条,绑定域名下的硬导航都会被改写成 /org/event/... 而 404。
     || pathname.startsWith('/r/')
     || pathname.startsWith('/s/')
+    || pathname.startsWith('/pay/')
+    || pathname.startsWith('/auth/')
     || pathname.startsWith('/manage')
     || /\.[a-z0-9]+$/i.test(pathname)
   ) {

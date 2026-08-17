@@ -1,0 +1,182 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-5);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-4);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-5);
+  background: var(--yu-color-bg-elevated);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-2);
+}
+
+.label {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-callout-tracking);
+  color: var(--yu-color-text-primary);
+}
+
+.input {
+  padding: 10px var(--yu-space-3);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-body-size);
+  line-height: var(--yu-text-body-leading);
+}
+
+.code {
+  composes: input;
+  font-family: var(--yu-font-family-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.input:focus-visible,
+.code:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 1px;
+}
+
+.help {
+  margin: 0;
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--yu-space-3);
+  font-size: var(--yu-text-body-size);
+  color: var(--yu-color-text-primary);
+  cursor: pointer;
+}
+
+.checkRow input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--yu-color-accent);
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+  align-items: center;
+}
+
+.save {
+  padding: 10px var(--yu-space-5);
+  border: none;
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-accent);
+  color: #fff;
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost {
+  composes: save;
+  background: transparent;
+  color: var(--yu-color-accent-text);
+  border: 1px solid var(--yu-color-hairline);
+}
+
+.danger {
+  composes: ghost;
+  color: var(--yu-color-danger-text);
+}
+
+.dangerArmed {
+  composes: save;
+  background: var(--yu-color-danger-fill);
+}
+
+.save:disabled,
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--yu-text-callout-size);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-danger-text);
+}
+
+.ok {
+  margin: 0;
+  font-size: var(--yu-text-callout-size);
+  color: var(--yu-color-success-text);
+}
+
+.dryRun {
+  border: 1px solid var(--yu-color-hairline);
+  border-left: 3px solid var(--yu-color-accent);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-5);
+  background: var(--yu-color-bg-section);
+}
+
+.dryTitle {
+  margin: 0 0 var(--yu-space-3);
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  color: var(--yu-color-text-primary);
+}
+
+.drySummary {
+  margin: 0 0 var(--yu-space-3);
+  font-size: var(--yu-text-callout-size);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.dryList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-2);
+}
+
+.drySample {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2);
+}
+
+.actionOk,
+.actionBad {
+  font-size: var(--yu-text-footnote-size);
+  padding: 3px 10px;
+  border-radius: var(--yu-radius-pill);
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  color: var(--yu-color-text-primary);
+}
+
+.actionBad {
+  border-color: var(--yu-color-danger-fill);
+  color: var(--yu-color-danger-text);
+}

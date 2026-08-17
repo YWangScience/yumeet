@@ -1,0 +1,178 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-5);
+}
+
+.methods,
+.group {
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-4);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-3);
+  background: var(--yu-color-bg-elevated);
+}
+
+.legend {
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  letter-spacing: var(--yu-text-headline-tracking);
+  line-height: var(--yu-text-headline-leading);
+  color: var(--yu-color-text-primary);
+  padding: 0 var(--yu-space-2);
+}
+
+.methodRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yu-space-3);
+  cursor: pointer;
+}
+
+.methodRow input {
+  margin-top: 0.2em;
+  accent-color: var(--yu-color-accent);
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.methodRow > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.methodName {
+  font-size: var(--yu-text-body-size);
+  font-weight: var(--yu-text-body-weight);
+  letter-spacing: var(--yu-text-body-tracking);
+  line-height: var(--yu-text-body-leading);
+  color: var(--yu-color-text-primary);
+}
+
+.methodHint {
+  font-size: var(--yu-text-footnote-size);
+  font-weight: var(--yu-text-footnote-weight);
+  letter-spacing: var(--yu-text-footnote-tracking);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-2);
+}
+
+.label {
+  font-size: var(--yu-text-callout-size);
+  font-weight: var(--yu-text-callout-weight);
+  letter-spacing: var(--yu-text-callout-tracking);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.req {
+  color: var(--yu-color-danger-text);
+}
+
+.input,
+.inputMono {
+  width: 100%;
+  padding: 10px var(--yu-space-3);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-body-size);
+  font-weight: var(--yu-text-body-weight);
+  letter-spacing: var(--yu-text-body-tracking);
+  line-height: var(--yu-text-body-leading);
+}
+
+.inputMono {
+  composes: input;
+  font-family: var(--yu-font-family-mono);
+  letter-spacing: 0.02em;
+}
+
+.input:focus-visible,
+.inputMono:focus-visible {
+  outline: 2px solid var(--yu-color-accent);
+  outline-offset: 1px;
+}
+
+.i18nRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--yu-space-3);
+}
+
+.i18nCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.langTag {
+  font-size: var(--yu-text-caption-size);
+  font-weight: var(--yu-text-caption-weight);
+  letter-spacing: var(--yu-text-caption-tracking);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--yu-space-4);
+  flex-wrap: wrap;
+}
+
+.save {
+  padding: 10px var(--yu-space-5);
+  border: none;
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-accent);
+  color: #fff;
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  letter-spacing: var(--yu-text-headline-tracking);
+  line-height: var(--yu-text-headline-leading);
+  cursor: pointer;
+}
+
+.save:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.error {
+  font-size: var(--yu-text-callout-size);
+  font-weight: var(--yu-text-callout-weight);
+  letter-spacing: var(--yu-text-callout-tracking);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-danger-text);
+  margin: 0;
+}
+
+.ok {
+  font-size: var(--yu-text-callout-size);
+  font-weight: var(--yu-text-callout-weight);
+  letter-spacing: var(--yu-text-callout-tracking);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-success-text);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .i18nRow {
+    grid-template-columns: 1fr;
+  }
+}

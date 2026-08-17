@@ -76,3 +76,28 @@
 .buttonGhost { color: var(--yu-color-accent-text); padding: 11px 24px; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-pill); text-decoration: none; font-size: var(--yu-text-callout-size); }
 .buttonGhost:hover { border-color: var(--yu-color-accent); text-decoration: none; }
 @media (max-width: 640px) { .page { padding: var(--yu-space-8) var(--yu-space-5) var(--yu-space-16); } .refCode { font-size: 26px; } .amount { font-size: 32px; } }
+
+/* 刚提交完报名的确认横幅:先安人心,再谈付款 */
+.receivedCard {
+  border: 1px solid var(--yu-color-success-fill);
+  border-left-width: 4px;
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-4) var(--yu-space-5);
+  background: var(--yu-color-bg-elevated);
+  margin-bottom: var(--yu-space-5);
+}
+
+.receivedTitle {
+  margin: 0 0 4px;
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  letter-spacing: var(--yu-text-headline-tracking);
+  color: var(--yu-color-success-text);
+}
+
+.receivedBody {
+  margin: 0;
+  font-size: var(--yu-text-callout-size);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-text-secondary);
+}

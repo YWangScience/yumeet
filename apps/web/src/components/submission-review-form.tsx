@@ -18,7 +18,6 @@ interface Props {
   orgSlug: string;
   eventSlug: string;
   submissionId: string; // sub_…
-  reviewerId: string;   // usr_…
   locale: Locale;
   dimensions: DimensionView[];
   initial: {
@@ -38,7 +37,7 @@ const range = (min: number, max: number) =>
  * 量表用单选按钮而非滑块 —— 键盘可达、屏幕阅读器可读出当前值。
  */
 export function SubmissionReviewForm({
-  orgSlug, eventSlug, submissionId, reviewerId, locale, dimensions, initial,
+  orgSlug, eventSlug, submissionId, locale, dimensions, initial,
 }: Props) {
   const tt = translator(locale);
   const [state, action, pending] = useActionState<ActionFeedback, FormData>(
@@ -52,7 +51,6 @@ export function SubmissionReviewForm({
       <input type="hidden" name="__org" value={orgSlug} />
       <input type="hidden" name="__event" value={eventSlug} />
       <input type="hidden" name="__submission" value={submissionId} />
-      <input type="hidden" name="__reviewer" value={reviewerId} />
 
       {state.errorKey && (
         <p className={styles.formError} role="alert">{tt(state.errorKey)}</p>

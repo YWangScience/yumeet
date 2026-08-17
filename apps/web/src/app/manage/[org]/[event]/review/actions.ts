@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { saveReview, decodeId, SCORE_DIMENSIONS } from '@yumeet/core';
 import { toFeedback, type ActionFeedback } from '@/app/[org]/[event]/cfp/errors';
+import { currentUser } from '@/lib/session';
+import { UnauthenticatedError } from '@/lib/authz';
 
 /**
  * 保存 / 提交评审(ch04 §4.3)。
@@ -16,15 +18,19 @@ export async function saveReviewAction(
   const orgSlug = String(fd.get('__org') ?? '');
   const eventSlug = String(fd.get('__event') ?? '');
   const submissionPublicId = String(fd.get('__submission') ?? '');
-  const reviewerPublicId = String(fd.get('__reviewer') ?? '');
   const submit = String(fd.get('__intent') ?? 'draft') === 'submit';
   const isConflict = fd.get('conflict') != null;
 
+  // 审稿人身份取自会话,**绝不取自表单** ——
+  // 表单里的 reviewer id 是客户端可改的,照单全收等于任何人都能冒名提交评审。
+  // 「这份评审是否分配给了此人」由 core 的 not_assigned 校验兜底。
+  const user = await currentUser();
+  if (!user) return toFeedback(new UnauthenticatedError());
+  const reviewerId = user.id;
+
   let submissionId: string;
-  let reviewerId: string;
   try {
     submissionId = decodeId('submission', submissionPublicId);
-    reviewerId = decodeId('user', reviewerPublicId);
   } catch {
     return { ok: false, errorKey: 'errSubmissionNotFound' };
   }

@@ -38,6 +38,7 @@ export default async function ManageLayout({ children, params }: Props) {
     { href: `${base}/submissions`, label: tt('submissions'), show: caps.has('submission.view') },
     { href: `${base}/review`, label: tt('myReviews'), show: caps.has('review.submit') },
     { href: `${base}/schedule`, label: tt('scheduleEditor'), show: caps.has('schedule.edit') },
+    { href: `${base}/automation`, label: tt('automation'), show: caps.has('event.edit') },
     { href: `${base}/design`, label: tt('design'), show: caps.has('design.edit') },
     { href: `${base}/checkin`, label: tt('checkin'), show: caps.has('onsite.checkin') },
     { href: `${base}/payments`, label: tt('reconciliation'), show: caps.has('payment.reconcile') },

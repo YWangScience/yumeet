@@ -8,6 +8,8 @@ import {
 import { resolveLocale } from '@/lib/locale-server';
 import { translator, pick, type Locale } from '@/lib/i18n';
 import { formatMoney } from '@/lib/format';
+import { MethodSwitcher } from '@/components/method-switcher';
+import { switchMethodAction } from './actions';
 import styles from './pay.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 
 interface Props {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{ lang?: string; new?: string }>;
 }
 
 /**
@@ -31,7 +33,8 @@ interface Props {
  */
 export default async function PayPage({ params, searchParams }: Props) {
   const { token } = await params;
-  const locale = await resolveLocale(await searchParams);
+  const sp = await searchParams;
+  const locale = await resolveLocale(sp);
   const tt = translator(locale);
 
   const data = await getRegistrationByToken(token);
@@ -49,6 +52,15 @@ export default async function PayPage({ params, searchParams }: Props) {
     <main className={styles.page}>
       <p className={styles.eyebrow}>{tt('paymentInstructions')}</p>
       <h1 className={styles.title}>{event!.title}</h1>
+
+      {sp.new && !paid && (
+        <section className={styles.receivedCard} role="status">
+          <p className={styles.receivedTitle}>{tt('registrationReceived')}</p>
+          <p className={styles.receivedBody}>
+            {tt('registrationReceivedBody', { code: reg.confirmationCode })}
+          </p>
+        </section>
+      )}
 
       {paid ? (
         <section className={styles.paidCard} role="status">
@@ -89,6 +101,15 @@ export default async function PayPage({ params, searchParams }: Props) {
           )}
 
           <MethodDetails method={method} cfg={cfg} locale={locale} tt={tt} />
+
+          <MethodSwitcher
+            current={method}
+            options={(cfg?.enabled ?? []).filter((m) => m !== 'stripe').map((m) => ({
+              value: m, label: METHOD_LABELS[m][locale],
+            }))}
+            action={switchMethodAction.bind(null, token)}
+            label={tt('choosePaymentMethod')}
+          />
 
           <section className={styles.nextCard}>
             <h2 className={styles.nextTitle}>{tt('afterPaying')}</h2>
@@ -161,7 +182,14 @@ function MethodDetails({ method, cfg, locale, tt }: {
     );
   }
 
-  return null;
+  // 配置缺失时不能什么都不显示 —— 参会者会以为页面坏了。
+  // 明说「主办方还没公布账户」,并把人导向联系方式。
+  return (
+    <section className={styles.detailCard}>
+      <h2 className={styles.detailTitle}>{METHOD_LABELS[method][locale]}</h2>
+      <p className={styles.detailBody}>{tt('paymentNotSetUp')}</p>
+    </section>
+  );
 }
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {

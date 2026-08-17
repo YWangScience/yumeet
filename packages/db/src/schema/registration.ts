@@ -79,6 +79,8 @@ export const registrations = pgTable('registrations', {
   answers: jsonb('answers').$type<Record<string, unknown>>().notNull(),
   status: registrationStatus('status').notNull(),
   waitlistPosition: integer('waitlist_position'),
+  /** 组织者与自动化规则打的标签(ch13 §13.5 的 tag.add/remove) */
+  tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
   confirmationCode: text('confirmation_code').notNull(),
   accessTokenHash: text('access_token_hash').notNull(), // /r/{token} 追踪页凭证(ch05 §5.5)
   confirmedAt: ts('confirmed_at'),

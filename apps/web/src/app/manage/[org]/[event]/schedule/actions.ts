@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import {
   getEventBySlug, saveScheduleDraft, publishSchedule, ScheduleError,
   type SessionDraft, type SnapshotSession, type ScheduleDiff, type Conflict,
@@ -26,9 +25,22 @@ export interface PublishScheduleResult {
   sessions?: SnapshotSession[];
 }
 
-async function actorIp(): Promise<string | null> {
-  const hdrs = await headers();
-  return hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+import { actorWithCapability, UnauthenticatedError } from '@/lib/authz';
+import { ForbiddenError } from '@yumeet/core';
+
+/**
+ * 授权失败 → 用户能看懂的一句话。
+ *
+ * 编排器这个界面本身就是「整场会议占哪个时段、放哪个会场」,
+ * 按用户定的规则归大会层:分会主席只在自己分会内部排报告的具体时刻,
+ * 那是另一个界面,走 schedule.edit_own_track。
+ */
+function authzError(e: unknown): { ok: false; error: string } | null {
+  if (e instanceof UnauthenticatedError) return { ok: false, error: '请先登录' };
+  if (e instanceof ForbiddenError) {
+    return { ok: false, error: '没有编排日程的权限 —— 整场时段编排由大会层负责' };
+  }
+  return null;
 }
 
 /**
@@ -44,15 +56,17 @@ export async function saveScheduleAction(input: {
   if (!found) return { ok: false, error: '活动不存在' };
 
   try {
+    const actor = await actorWithCapability(found.event.id, 'schedule.edit');
     const res = await saveScheduleDraft({
       eventId: found.event.id,
       drafts: input.drafts,
-      // M1:后台尚未接入登录,审计记录为匿名组织者(与其他 Server Action 一致)
-      actor: { type: 'user', id: null, ip: await actorIp() },
+      actor,
     });
     revalidatePath(`/manage/${input.orgSlug}/${input.eventSlug}/schedule`);
     return { ok: true, sessions: res.sessions, diff: res.diff, idMap: res.idMap };
   } catch (e) {
+    const denied = authzError(e);
+    if (denied) return denied;
     if (e instanceof ScheduleError) {
       return { ok: false, error: e.message, conflicts: e.conflicts };
     }
@@ -73,10 +87,9 @@ export async function publishScheduleAction(input: {
   if (!found) return { ok: false, error: '活动不存在' };
 
   try {
-    const res = await publishSchedule({
-      eventId: found.event.id,
-      actor: { type: 'user', id: null, ip: await actorIp() },
-    });
+    // 发布是对外可见的动作,比保存草稿更高一档
+    const actor = await actorWithCapability(found.event.id, 'schedule.publish');
+    const res = await publishSchedule({ eventId: found.event.id, actor });
     revalidatePath(`/${input.orgSlug}/${input.eventSlug}/schedule`);
     revalidatePath(`/${input.orgSlug}/${input.eventSlug}`);
     revalidatePath(`/manage/${input.orgSlug}/${input.eventSlug}/schedule`);
@@ -87,6 +100,8 @@ export async function publishScheduleAction(input: {
       sessions: res.sessions,
     };
   } catch (e) {
+    const denied = authzError(e);
+    if (denied) return denied;
     if (e instanceof ScheduleError) {
       return { ok: false, error: e.message, conflicts: e.conflicts };
     }

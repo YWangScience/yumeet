@@ -196,6 +196,7 @@ function describeAction(action: string, locale: Locale): string {
     'registration.cancelled': { zh: '报名已取消', en: 'Registration cancelled' },
     'registration.expired': { zh: '报名已过期', en: 'Registration expired' },
     'registration.exported': { zh: '名单被导出', en: 'Roster exported' },
+    'badges.exported': { zh: '胸牌被批量导出', en: 'Badges exported' },
   };
   return map[action]?.[locale] ?? action;
 }

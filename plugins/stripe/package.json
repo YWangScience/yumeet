@@ -1,0 +1,9 @@
+{
+  "name": "@yumeet/plugin-stripe",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@yumeet/core": "workspace:*" },
+  "devDependencies": { "typescript": "^5.7.2", "@types/node": "^22.10.2" }
+}
