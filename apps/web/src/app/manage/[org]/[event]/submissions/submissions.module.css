@@ -1,0 +1,85 @@
+.page { max-width: 1180px; margin: 0 auto; padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24); }
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--yu-space-4); flex-wrap: wrap; margin-bottom: var(--yu-space-10); }
+.eyebrow { font-size: var(--yu-text-footnote-size); letter-spacing: 0.06em; text-transform: uppercase; color: var(--yu-color-text-secondary); }
+.title {
+  margin-top: var(--yu-space-2);
+  font-size: var(--yu-text-title-2-size); font-weight: var(--yu-text-title-2-weight);
+  letter-spacing: var(--yu-text-title-2-tracking); line-height: var(--yu-text-title-2-leading);
+  text-wrap: balance;
+}
+.meta { margin-top: var(--yu-space-2); color: var(--yu-color-text-secondary); font-size: var(--yu-text-callout-size); }
+.headerLinks { display: flex; gap: var(--yu-space-4); flex-wrap: wrap; }
+.headerLink { font-size: var(--yu-text-callout-size); color: var(--yu-color-accent-text); text-decoration: none; white-space: nowrap; }
+.headerLink:hover { text-decoration: underline; }
+
+.kpis { display: grid; gap: var(--yu-space-3); grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: var(--yu-space-10); }
+.kpi { background: var(--yu-color-bg-section); border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-card); padding: var(--yu-space-5); display: grid; gap: var(--yu-space-1); }
+.kpiLabel { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.kpiValue { font-size: var(--yu-text-title-3-size); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+.section { margin-bottom: var(--yu-space-12); }
+.sectionTitle {
+  font-size: var(--yu-text-title-3-size); font-weight: var(--yu-text-title-3-weight);
+  letter-spacing: var(--yu-text-title-3-tracking); margin-bottom: var(--yu-space-4);
+}
+.filters { display: flex; gap: var(--yu-space-2); flex-wrap: wrap; margin-bottom: var(--yu-space-5); }
+.filter {
+  font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary);
+  padding: 5px 14px; border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill); text-decoration: none;
+}
+.filter:hover { border-color: var(--yu-color-accent-text); color: var(--yu-color-text-primary); text-decoration: none; }
+.filterActive { background: var(--yu-color-accent); border-color: var(--yu-color-accent-text); color: #fff; }
+.filterCount { font-variant-numeric: tabular-nums; margin-left: 4px; }
+.empty { color: var(--yu-color-text-secondary); padding: var(--yu-space-8); text-align: center; border: 1px dashed var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+
+/* 详情页 */
+.backLink { display: inline-block; margin-bottom: var(--yu-space-5); font-size: var(--yu-text-footnote-size); color: var(--yu-color-accent-text); text-decoration: none; }
+.backLink:hover { text-decoration: underline; }
+.detailGrid { display: grid; gap: var(--yu-space-6); grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); align-items: start; }
+.card {
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-6);
+  margin-bottom: var(--yu-space-5);
+}
+.cardTitle { font-size: var(--yu-text-headline-size); font-weight: var(--yu-text-headline-weight); margin-bottom: var(--yu-space-4); }
+.abstract { margin: 0; line-height: 1.65; font-size: var(--yu-text-callout-size); text-wrap: pretty; white-space: pre-wrap; }
+.dl { margin: 0; }
+.dlRow { display: flex; justify-content: space-between; gap: var(--yu-space-4); padding: var(--yu-space-2) 0; border-bottom: 1px solid var(--yu-color-hairline); font-size: var(--yu-text-footnote-size); }
+.dlRow:last-child { border-bottom: 0; }
+.dlRow dt { color: var(--yu-color-text-secondary); }
+.dlRow dd { margin: 0; text-align: right; }
+.mono { font-family: var(--yu-font-family-mono); font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary); }
+.authorList { list-style: none; margin: 0; padding: 0; }
+.authorList li { padding: var(--yu-space-1) 0; font-size: var(--yu-text-footnote-size); }
+.presenterTag {
+  margin-left: var(--yu-space-2); font-size: var(--yu-text-caption-size); font-weight: 500;
+  padding: 1px 8px; border-radius: var(--yu-radius-pill);
+  background: color-mix(in srgb, var(--yu-color-accent) 12%, transparent);
+  color: var(--yu-color-accent-text);
+}
+.reviewItem { border-top: 1px solid var(--yu-color-hairline); padding: var(--yu-space-4) 0; }
+.reviewItem:first-of-type { border-top: 0; padding-top: 0; }
+.reviewHead { display: flex; justify-content: space-between; gap: var(--yu-space-3); flex-wrap: wrap; align-items: baseline; }
+.reviewer { font-weight: 600; font-size: var(--yu-text-callout-size); }
+.reviewMetaLine { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); font-variant-numeric: tabular-nums; }
+.scoreList { display: flex; gap: var(--yu-space-4); flex-wrap: wrap; margin: var(--yu-space-3) 0 0; padding: 0; list-style: none; font-size: var(--yu-text-footnote-size); }
+.scoreItem { color: var(--yu-color-text-secondary); }
+.scoreValue { color: var(--yu-color-text-primary); font-weight: 600; font-variant-numeric: tabular-nums; margin-left: 4px; }
+.commentBlock { margin: var(--yu-space-3) 0 0; }
+.commentLabel { font-size: var(--yu-text-caption-size); font-weight: 600; color: var(--yu-color-text-secondary); letter-spacing: 0.03em; }
+.commentBody { margin: 2px 0 0; font-size: var(--yu-text-footnote-size); line-height: 1.6; text-wrap: pretty; }
+.conflictTag { font-size: var(--yu-text-footnote-size); font-weight: 600; color: var(--yu-color-danger-text); }
+.pending { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.aggregate { display: flex; gap: var(--yu-space-5); flex-wrap: wrap; margin: 0 0 var(--yu-space-4); padding: 0; list-style: none; }
+.aggItem { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.aggValue { display: block; font-size: var(--yu-text-title-3-size); font-weight: 600; color: var(--yu-color-text-primary); font-variant-numeric: tabular-nums; }
+.disputed { color: var(--yu-color-warning-text); font-weight: 600; font-size: var(--yu-text-footnote-size); }
+
+@media (max-width: 900px) { .detailGrid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) {
+  .page { padding: var(--yu-space-6) var(--yu-space-4) var(--yu-space-16); }
+  .title { font-size: 28px; }
+}

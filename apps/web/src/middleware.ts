@@ -8,6 +8,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  */
 const DOMAIN_MAP: Record<string, { org: string; event: string }> = {
   'mg18.ywang.science': { org: 'icranet', event: 'mg18' },
+  'mg17.ywang.science': { org: 'icranet', event: 'mg17' },
 };
 
 /** 平台主域:显示产品站与组织索引,不做活动改写 */

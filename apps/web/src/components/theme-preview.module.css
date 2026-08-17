@@ -1,0 +1,147 @@
+/* 主题实时预览框(ch07 §7.5)
+   框内一律用 var(--yu-…) 取值,变量由组件的内联 style 提供,
+   与公共活动页读的是同一组 token。 */
+
+.viewport {
+  overflow-x: auto;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  background: var(--yu-color-bg-section);
+  padding: var(--yu-space-3);
+}
+
+.viewport:focus-visible {
+  outline: 3px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.frame {
+  /* 这些声明读的是内联注入的活动主题 token,而不是后台自己的 token */
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-text-primary);
+  font-family: var(--yu-font-family-base);
+  border-radius: var(--yu-radius-card);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+/* ---- 导航条 ---- */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yu-space-4);
+  height: 48px;
+  padding: 0 var(--yu-space-6);
+  border-bottom: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-page);
+}
+
+.navTitle {
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-footnote-tracking);
+  color: var(--yu-color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navCta {
+  flex: none;
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 500;
+  color: var(--yu-color-accent-text);
+}
+
+/* ---- Hero ---- */
+
+.hero {
+  padding: var(--yu-space-16) var(--yu-space-8) var(--yu-space-12);
+  text-align: center;
+}
+
+.kicker {
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+  margin-bottom: var(--yu-space-2);
+}
+
+.heroTitle {
+  font-size: var(--yu-text-title-2-size);
+  font-weight: var(--yu-text-title-2-weight);
+  letter-spacing: var(--yu-text-title-2-tracking);
+  line-height: var(--yu-text-title-2-leading);
+  color: var(--yu-color-text-primary);
+  margin-bottom: var(--yu-space-3);
+}
+
+.heroSub {
+  font-size: var(--yu-text-body-size);
+  line-height: var(--yu-text-body-leading);
+  color: var(--yu-color-text-secondary);
+  max-width: 34em;
+  margin: 0 auto var(--yu-space-6);
+}
+
+.ctaRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--yu-space-6);
+  flex-wrap: wrap;
+}
+
+.buttonPrimary {
+  display: inline-block;
+  background: var(--yu-color-accent);
+  color: #ffffff;
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-3) var(--yu-space-6);
+  font-size: var(--yu-text-callout-size);
+  font-weight: 500;
+}
+
+.textLink {
+  color: var(--yu-color-accent-text);
+  font-size: var(--yu-text-callout-size);
+  font-weight: 500;
+}
+
+/* ---- 分区与卡片 ---- */
+
+.section {
+  background: var(--yu-color-bg-section);
+  padding: var(--yu-space-12) var(--yu-space-8);
+}
+
+.sectionTitle {
+  font-size: var(--yu-text-title-3-size);
+  font-weight: var(--yu-text-title-3-weight);
+  line-height: var(--yu-text-title-3-leading);
+  color: var(--yu-color-text-primary);
+  margin-bottom: var(--yu-space-6);
+}
+
+.card {
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-8);
+}
+
+.cardTitle {
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  line-height: var(--yu-text-headline-leading);
+  color: var(--yu-color-text-primary);
+  margin-bottom: var(--yu-space-3);
+}
+
+.cardMeta {
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+}

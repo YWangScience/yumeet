@@ -1,0 +1,118 @@
+/* 日程编排器页面外壳(ch05 §5.1)。颜色/字号/间距一律取 --yu- token。 */
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--yu-space-8) var(--yu-space-6) var(--yu-space-16);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--yu-space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--yu-space-6);
+}
+
+.headerMain {
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.headerSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--yu-space-3);
+}
+
+.eyebrow {
+  font-size: var(--yu-text-footnote-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--yu-color-text-secondary);
+}
+
+.title {
+  margin-top: var(--yu-space-2);
+  font-size: var(--yu-text-title-2-size);
+  font-weight: var(--yu-text-title-2-weight);
+  letter-spacing: var(--yu-text-title-2-tracking);
+  line-height: var(--yu-text-title-2-leading);
+}
+
+.meta {
+  margin-top: var(--yu-space-2);
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2);
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-secondary);
+}
+
+.dot {
+  color: var(--yu-color-text-secondary);
+}
+
+.tz {
+  font-family: var(--yu-font-family-mono);
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-primary);
+  padding: 1px var(--yu-space-2);
+  border-radius: var(--yu-radius-pill);
+  background: var(--yu-color-bg-section);
+}
+
+.lede {
+  margin-top: var(--yu-space-3);
+  max-width: 68ch;
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+  text-wrap: pretty;
+}
+
+.links {
+  display: flex;
+  gap: var(--yu-space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.link {
+  display: inline-block;
+  padding: 6px 16px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-accent-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover {
+  border-color: var(--yu-color-accent-text);
+  background: var(--yu-color-bg-section);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--yu-space-6) var(--yu-space-4) var(--yu-space-12);
+  }
+
+  .headerSide {
+    align-items: flex-start;
+  }
+
+  .links {
+    justify-content: flex-start;
+  }
+
+  .title {
+    font-size: var(--yu-text-title-3-size);
+    letter-spacing: var(--yu-text-title-3-tracking);
+    line-height: var(--yu-text-title-3-leading);
+  }
+}

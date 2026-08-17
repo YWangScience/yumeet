@@ -23,3 +23,25 @@
   border-radius: 6px;
   padding: 1px 6px;
 }
+
+/* 自定义页面里的富内容 */
+.prose a { color: var(--yu-color-accent-text); text-decoration: none; }
+.prose a:hover { text-decoration: underline; }
+.prose img {
+  max-width: 100%; height: auto;
+  border-radius: var(--yu-radius-card);
+  border: 1px solid var(--yu-color-hairline);
+  margin: var(--yu-space-4) 0;
+}
+.prose ol { margin: var(--yu-space-3) 0; padding-left: var(--yu-space-6); }
+.prose blockquote {
+  margin: var(--yu-space-4) 0;
+  padding: var(--yu-space-1) 0 var(--yu-space-1) var(--yu-space-5);
+  border-left: 2px solid var(--yu-color-hairline);
+  color: var(--yu-color-text-secondary);
+}
+.prose hr {
+  border: 0; border-top: 1px solid var(--yu-color-hairline);
+  margin: var(--yu-space-8) 0;
+}
+.prose h4 { font-size: var(--yu-text-callout-size); font-weight: 600; margin: var(--yu-space-5) 0 var(--yu-space-2); }

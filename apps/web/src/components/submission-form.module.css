@@ -1,0 +1,96 @@
+.form { display: block; }
+.formError {
+  background: color-mix(in srgb, var(--yu-color-danger-fill) 12%, transparent);
+  color: var(--yu-color-danger-text);
+  border: 1px solid color-mix(in srgb, var(--yu-color-danger-fill) 35%, transparent);
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  margin-bottom: var(--yu-space-6);
+  font-size: var(--yu-text-callout-size);
+}
+
+.fieldset { border: 0; padding: 0; margin: 0 0 var(--yu-space-10); }
+.legend {
+  font-size: var(--yu-text-title-3-size); font-weight: var(--yu-text-title-3-weight);
+  letter-spacing: var(--yu-text-title-3-tracking);
+  padding: 0; margin-bottom: var(--yu-space-4);
+}
+.field { margin-bottom: var(--yu-space-5); }
+.grid2 { display: grid; gap: var(--yu-space-4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.label {
+  display: block; margin-bottom: var(--yu-space-2);
+  font-size: var(--yu-text-callout-size); font-weight: 500;
+  letter-spacing: var(--yu-text-callout-tracking);
+}
+.required { color: var(--yu-color-danger-text); }
+
+.input, .textarea, .select {
+  width: 100%;
+  font: inherit;
+  font-size: var(--yu-text-body-size);
+  color: var(--yu-color-text-primary);
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  padding: 10px 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.textarea { resize: vertical; line-height: 1.55; }
+.input:focus, .textarea:focus, .select:focus {
+  border-color: var(--yu-color-accent);
+  box-shadow: 0 0 0 4px var(--yu-color-focus-ring-soft);
+  outline: none;
+}
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible {
+  outline: 3px solid var(--yu-color-focus-ring); outline-offset: 2px;
+}
+.help { margin: var(--yu-space-2) 0 var(--yu-space-4); font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+
+.authorCard {
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-5);
+  margin: 0 0 var(--yu-space-4);
+  background: var(--yu-color-bg-elevated);
+}
+.authorLegend {
+  padding: 0 var(--yu-space-2);
+  font-size: var(--yu-text-footnote-size); font-weight: 600;
+  color: var(--yu-color-text-secondary);
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.authorFoot { display: flex; justify-content: space-between; align-items: center; gap: var(--yu-space-4); flex-wrap: wrap; }
+.checkLabel {
+  display: flex; align-items: center; gap: var(--yu-space-2);
+  font-size: var(--yu-text-callout-size); cursor: pointer; line-height: 1.5;
+}
+.checkLabel input { accent-color: var(--yu-color-accent); flex: 0 0 auto; }
+
+.addAuthor, .removeAuthor {
+  font: inherit; font-size: var(--yu-text-footnote-size); font-weight: 500;
+  padding: 7px 18px; border-radius: var(--yu-radius-pill);
+  border: 1px solid var(--yu-color-hairline); background: transparent;
+  color: var(--yu-color-accent-text); cursor: pointer;
+}
+.addAuthor:hover, .removeAuthor:hover { border-color: var(--yu-color-accent-text); }
+.removeAuthor { color: var(--yu-color-danger-text); }
+.removeAuthor:hover { border-color: var(--yu-color-danger-text); }
+
+.submitRow { display: flex; gap: var(--yu-space-3); align-items: center; flex-wrap: wrap; }
+.submit {
+  font: inherit; font-size: var(--yu-text-body-size); font-weight: 500;
+  background: var(--yu-color-accent); color: #fff;
+  border: 0; border-radius: var(--yu-radius-pill);
+  padding: 13px 32px; cursor: pointer;
+  transition: background 200ms ease;
+}
+.submit:hover:not(:disabled) { background: var(--yu-color-accent-hover); }
+.secondary {
+  font: inherit; font-size: var(--yu-text-callout-size); font-weight: 500;
+  background: transparent; color: var(--yu-color-accent-text);
+  border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-pill);
+  padding: 12px 26px; cursor: pointer;
+}
+.secondary:hover:not(:disabled) { border-color: var(--yu-color-accent-text); }
+.submit:disabled, .secondary:disabled { cursor: progress; }
+.submitHint { margin: 0; flex-basis: 100%; font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }

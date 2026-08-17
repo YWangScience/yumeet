@@ -1,0 +1,376 @@
+/* 主题编辑器(ch07 §7.5)——左栏分组编辑器,右栏实时预览。
+   后台自身始终是 yuMeet 品牌(§7.6 边界声明),这里读的是 globals.css 的默认 token。 */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: var(--yu-space-8);
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------- 左栏 ---------------- */
+
+.panel {
+  display: grid;
+  gap: var(--yu-space-6);
+  min-width: 0;
+}
+
+.group {
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  background: var(--yu-color-bg-elevated);
+  padding: var(--yu-space-6);
+  margin: 0;
+}
+
+.legend {
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  line-height: var(--yu-text-headline-leading);
+  color: var(--yu-color-text-primary);
+  padding: 0 var(--yu-space-2);
+  margin-left: calc(var(--yu-space-2) * -1);
+}
+
+.help {
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+  margin-bottom: var(--yu-space-4);
+}
+
+.field {
+  margin-top: var(--yu-space-6);
+}
+
+.field:first-of-type {
+  margin-top: 0;
+}
+
+.label {
+  display: block;
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  color: var(--yu-color-text-primary);
+  margin-bottom: var(--yu-space-2);
+}
+
+.labelInline {
+  display: block;
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-secondary);
+  margin-bottom: var(--yu-space-1);
+}
+
+.value {
+  font-weight: 400;
+  color: var(--yu-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 模板包选择 ---- */
+
+.themeList {
+  display: grid;
+  gap: var(--yu-space-3);
+}
+
+.themeCard {
+  position: relative;
+  display: block;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-4);
+  cursor: pointer;
+  background: var(--yu-color-bg-page);
+}
+
+.themeCardOn {
+  border-color: var(--yu-color-accent);
+  box-shadow: inset 0 0 0 1px var(--yu-color-accent);
+}
+
+.themeCard:has(.radio:focus-visible) {
+  outline: 3px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.themeBody {
+  display: grid;
+  gap: var(--yu-space-1);
+}
+
+.themeName {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  color: var(--yu-color-text-primary);
+}
+
+.themeVersion {
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-secondary);
+}
+
+.themeDesc {
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.swatches {
+  display: flex;
+  gap: var(--yu-space-1);
+  margin-top: var(--yu-space-2);
+}
+
+.swatch {
+  width: 28px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--yu-color-hairline);
+}
+
+/* ---- 强调色 ---- */
+
+.colorRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--yu-space-4);
+}
+
+.colorInput {
+  inline-size: 64px;
+  block-size: 44px;
+  padding: 2px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-page);
+  cursor: pointer;
+}
+
+.hexField {
+  flex: 1;
+  min-width: 0;
+}
+
+.textInput,
+.select {
+  width: 100%;
+  font: inherit;
+  font-size: var(--yu-text-callout-size);
+  color: var(--yu-color-text-primary);
+  background: var(--yu-color-bg-page);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  padding: 10px 12px;
+}
+
+.textInput {
+  font-family: var(--yu-font-family-mono);
+}
+
+.range {
+  width: 100%;
+  accent-color: var(--yu-color-accent);
+}
+
+/* ---- 对比度守卫 ---- */
+
+.guardOk,
+.guardWarn {
+  margin-top: var(--yu-space-6);
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-4);
+  border: 1px solid;
+}
+
+.guardOk {
+  background: color-mix(in srgb, var(--yu-color-success-fill) 12%, var(--yu-color-bg-elevated));
+  border-color: color-mix(in srgb, var(--yu-color-success-fill) 40%, var(--yu-color-bg-elevated));
+  color: var(--yu-color-success-text);
+}
+
+.guardWarn {
+  background: color-mix(in srgb, var(--yu-color-danger-fill) 10%, var(--yu-color-bg-elevated));
+  border-color: color-mix(in srgb, var(--yu-color-danger-fill) 40%, var(--yu-color-bg-elevated));
+  color: var(--yu-color-danger-text);
+}
+
+.guardTitle {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  margin-bottom: var(--yu-space-2);
+}
+
+.guardBody {
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  margin-bottom: var(--yu-space-2);
+}
+
+/* 有色底上一律用 text-primary:12px 的说明文字不能靠半透明或次要色弱化,
+   否则在守卫自己的警示底色上就先违反 1.4.3 了。 */
+.guardNote {
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.5;
+  color: var(--yu-color-text-primary);
+  margin-top: var(--yu-space-3);
+}
+
+.guardApply {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--yu-space-2);
+  font: inherit;
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 500;
+  color: var(--yu-color-text-primary);
+  background: var(--yu-color-bg-page);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.guardApply:hover {
+  border-color: var(--yu-color-text-secondary);
+}
+
+.guardChip {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--yu-color-hairline);
+}
+
+/* ---- 保存 ---- */
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+}
+
+.save {
+  font: inherit;
+  font-size: var(--yu-text-callout-size);
+  font-weight: 500;
+  color: #ffffff;
+  background: var(--yu-color-accent);
+  border: 0;
+  border-radius: var(--yu-radius-control);
+  padding: 12px 24px;
+  cursor: pointer;
+}
+
+.save:hover:not(:disabled) { background: var(--yu-color-accent-hover); }
+.save:disabled { background: var(--yu-color-text-secondary); cursor: not-allowed; }
+
+.reset {
+  font: inherit;
+  font-size: var(--yu-text-callout-size);
+  color: var(--yu-color-text-primary);
+  background: transparent;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  padding: 12px 20px;
+  cursor: pointer;
+}
+
+.reset:hover { border-color: var(--yu-color-text-secondary); }
+
+.count {
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-secondary);
+}
+
+.saveStatus {
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-success-text);
+  min-height: 1.5em;
+}
+
+/* ---------------- 右栏 ---------------- */
+
+.previewPane {
+  position: sticky;
+  top: var(--yu-space-6);
+  min-width: 0;
+  display: grid;
+  gap: 0;
+}
+
+@media (max-width: 1080px) {
+  .previewPane { position: static; }
+}
+
+.previewHeading {
+  font-size: var(--yu-text-title-3-size);
+  font-weight: var(--yu-text-title-3-weight);
+  line-height: var(--yu-text-title-3-leading);
+  color: var(--yu-color-text-primary);
+  margin-bottom: var(--yu-space-2);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yu-space-4);
+  margin-bottom: var(--yu-space-4);
+}
+
+.toolGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--yu-space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.toolLegend {
+  float: left;
+  width: 100%;
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-secondary);
+  padding: 0;
+  margin-bottom: var(--yu-space-1);
+}
+
+.chip {
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-primary);
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  padding: 6px 14px;
+  cursor: pointer;
+  position: relative;
+}
+
+.chipOn {
+  background: var(--yu-color-accent);
+  color: #ffffff;
+  border-color: var(--yu-color-accent);
+}
+
+.chip:has(.radio:focus-visible) {
+  outline: 3px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}

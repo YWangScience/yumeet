@@ -1,0 +1,73 @@
+/* 主题设置页外壳(ch07 §7.5)。后台始终 yuMeet 品牌,读 globals.css 的默认 token。 */
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--yu-space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--yu-space-8);
+}
+
+.headerMain {
+  max-width: 62ch;
+}
+
+.eyebrow {
+  font-size: var(--yu-text-footnote-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--yu-color-text-secondary);
+}
+
+.title {
+  margin-top: var(--yu-space-2);
+  font-size: var(--yu-text-title-2-size);
+  font-weight: var(--yu-text-title-2-weight);
+  letter-spacing: var(--yu-text-title-2-tracking);
+  line-height: var(--yu-text-title-2-leading);
+  text-wrap: balance;
+}
+
+.eventName {
+  margin-top: var(--yu-space-2);
+  font-size: var(--yu-text-callout-size);
+  color: var(--yu-color-text-secondary);
+}
+
+.lede {
+  margin-top: var(--yu-space-3);
+  font-size: var(--yu-text-body-size);
+  line-height: var(--yu-text-body-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.headerAside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--yu-space-3);
+}
+
+.links {
+  display: flex;
+  gap: var(--yu-space-4);
+  flex-wrap: wrap;
+}
+
+.link {
+  font-size: var(--yu-text-callout-size);
+  color: var(--yu-color-accent-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

@@ -9,3 +9,5 @@
 dist/
 next-env.d.ts
 node_modules/
+# MG17 导入的大图片资源(可由 docs-data/ 的脚本重新生成)
+apps/web/public/mg17/

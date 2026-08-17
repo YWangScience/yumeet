@@ -79,3 +79,29 @@ export const tickets = pgTable('tickets', {
   hidden: boolean('hidden').notNull().default(false),
   position: integer('position').notNull().default(0),
 }, (t) => [index('tickets_event_idx').on(t.eventId)]);
+
+/**
+ * 活动自定义页面(ch05 §5.4 归档 + 组织者自建内容页)
+ * 承载「科学目标 / 重要日期 / 委员会 / 住宿 / 交通 / 赞助商」等任意页面,
+ * 对应 Indico 的 custom pages;内容为 Markdown,支持中英双语。
+ */
+export const eventPages = pgTable('event_pages', {
+  id: uuid('id').primaryKey().$defaultFn(uuidv7),
+  eventId: uuid('event_id').notNull().references(() => events.id),
+  slug: text('slug').notNull(),                    // /{org}/{event}/p/{slug}
+  title: text('title').notNull(),
+  body: text('body').notNull(),                    // Markdown 源文
+  /** 多语言覆盖:{ en: { title, body }, zh: {...} }(ch09 §9.3 I18nString) */
+  contentI18n: jsonb('content_i18n').$type<Record<string, { title?: string; body?: string }>>(),
+  position: integer('position').notNull().default(0),   // 导航排序
+  group: text('group'),                            // 导航分组(如「实用信息」)
+  showInNav: boolean('show_in_nav').notNull().default(true),
+  sourceUrl: text('source_url'),                   // 迁移来源(ch14 §14.1)
+  createdAt: ts('created_at').notNull().defaultNow(),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+  deletedAt: ts('deleted_at'),
+}, (t) => [
+  uniqueIndex('event_pages_slug_uq').on(t.eventId, t.slug)
+    .where(sql`${t.deletedAt} IS NULL`),
+  index('event_pages_nav_idx').on(t.eventId, t.position),
+]);

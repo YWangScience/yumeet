@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | `https://yumeet.ywang.science` | 平台主站(产品介绍 + 会议索引) | 根路径显示落地页,`/{org}/{event}` 访问具体会议 |
 | `https://mg18.ywang.science` | MG18 演示站(白标域名) | 根路径直达会议,URL 中不出现 `/icranet/mg18` 前缀 |
+| `https://mg17.ywang.science` | MG17 归档站(2024 年已结束会议) | 同上,复现自 indico.icranet.org/event/8 |
 
 白标域名映射在 `apps/web/src/middleware.ts` 的 `DOMAIN_MAP` 中声明。
 新增绑定域名时:① 加 DNS A 记录 → ② 在 `DOMAIN_MAP` 加一行 → ③ 跑一次 certbot(见下)。
@@ -68,11 +69,22 @@ certbot certificates                  # 证书到期日
 docker compose -f deploy/docker-compose.dev.yml ps   # 容器状态
 ```
 
+## 进程守护
+
+已用 systemd 托管,开机自启且崩溃自动重启:
+
+```bash
+systemctl status yumeet      # 状态
+systemctl restart yumeet     # 重启
+journalctl -u yumeet -f      # 或 tail -f /var/log/yumeet.log
+```
+
+Unit 文件:`/etc/systemd/system/yumeet.service`
+
 ## 生产化待办
 
-当前是开发模式(`next dev`)运行。生产部署需要:
+当前仍以开发模式(`next dev`)运行。正式上线还需:
 
-1. `pnpm build && pnpm start`,或用 `deploy/docker-compose.yml` 的完整七容器方案(ch11 §11.2)
-2. 用 systemd unit 或 PM2 守护进程,确保重启后自动拉起
-3. `DATABASE_URL` 等敏感配置移入环境变量文件,不写进仓库
-4. 接入 `apps/worker`(邮件、webhook 投递、保留期清理)
+1. 改为 `pnpm build && pnpm start`(或 `deploy/docker-compose.yml` 的完整方案,ch11 §11.2),并同步修改 systemd 的 ExecStart
+2. `DATABASE_URL` 等敏感配置移入 `EnvironmentFile`,不写进仓库与 unit 文件
+3. 常驻 `apps/worker`(邮件、webhook 投递、保留期清理)——另建一个 systemd unit

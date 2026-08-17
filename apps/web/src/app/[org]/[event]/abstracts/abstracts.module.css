@@ -1,0 +1,59 @@
+.page { max-width: 880px; margin: 0 auto; padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24); }
+.breadcrumb { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); margin-bottom: var(--yu-space-6); }
+.breadcrumb a { color: var(--yu-color-accent-text); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.title { font-size: var(--yu-text-title-1-size); font-weight: var(--yu-text-title-1-weight); letter-spacing: var(--yu-text-title-1-tracking); line-height: var(--yu-text-title-1-leading); }
+.lede { margin: var(--yu-space-3) 0 var(--yu-space-8); color: var(--yu-color-text-secondary); font-size: var(--yu-text-body-large-size); line-height: var(--yu-text-body-large-leading); text-wrap: pretty; }
+
+.filters { display: grid; gap: var(--yu-space-3); margin-bottom: var(--yu-space-5); }
+.searchRow { display: flex; gap: var(--yu-space-2); }
+.search {
+  flex: 1; font: inherit; font-size: var(--yu-text-body-size);
+  color: var(--yu-color-text-primary); background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-control);
+  padding: 10px 14px;
+}
+.search:focus { border-color: var(--yu-color-accent); box-shadow: 0 0 0 4px var(--yu-color-focus-ring-soft); outline: none; }
+.search:focus-visible { outline: 3px solid var(--yu-color-focus-ring); outline-offset: 2px; }
+.searchBtn {
+  font: inherit; font-size: var(--yu-text-callout-size); font-weight: 500;
+  background: var(--yu-color-accent); color: #fff; border: 0;
+  border-radius: var(--yu-radius-control); padding: 0 22px; cursor: pointer;
+}
+.searchBtn:hover { background: var(--yu-color-accent-hover); }
+.trackRow { display: flex; align-items: center; gap: var(--yu-space-3); flex-wrap: wrap; }
+.trackLabel { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.trackSelect {
+  font: inherit; font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-primary); background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-control);
+  padding: 7px 12px; max-width: 100%;
+}
+.count { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); margin-bottom: var(--yu-space-4); display: flex; gap: var(--yu-space-3); align-items: baseline; }
+.clear { color: var(--yu-color-accent-text); text-decoration: none; }
+.clear:hover { text-decoration: underline; }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--yu-space-1); }
+.item { border-bottom: 1px solid var(--yu-color-hairline); padding: var(--yu-space-4) 0; }
+.item:last-child { border-bottom: 0; }
+.itemTitle { font-size: var(--yu-text-callout-size); font-weight: 600; line-height: 1.4; text-wrap: pretty; }
+.itemTitle a { color: var(--yu-color-text-primary); text-decoration: none; }
+.itemTitle a:hover { color: var(--yu-color-accent-text); text-decoration: underline; }
+.authors { margin: var(--yu-space-2) 0 0; font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); line-height: 1.45; }
+.meta { margin: var(--yu-space-2) 0 0; display: flex; gap: var(--yu-space-2); align-items: center; flex-wrap: wrap; }
+.trackChip {
+  font-size: var(--yu-text-caption-size); font-weight: 600;
+  font-family: var(--yu-font-family-mono);
+  color: var(--yu-color-accent-text);
+  background: color-mix(in srgb, var(--yu-color-accent) 10%, transparent);
+  padding: 2px 9px; border-radius: var(--yu-radius-pill);
+}
+.type { font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary); }
+.empty { padding: var(--yu-space-10); text-align: center; color: var(--yu-color-text-secondary); border: 1px dashed var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+
+.pager { display: flex; align-items: center; justify-content: center; gap: var(--yu-space-5); margin-top: var(--yu-space-8); }
+.pagerLink { font-size: var(--yu-text-callout-size); color: var(--yu-color-accent-text); text-decoration: none; }
+.pagerLink:hover { text-decoration: underline; }
+.pagerInfo { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); font-variant-numeric: tabular-nums; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) { .page { padding: var(--yu-space-6) var(--yu-space-5) var(--yu-space-16); } .title { font-size: 32px; } }

@@ -1,0 +1,679 @@
+/* 日程编排器(ch05 §5.1)
+   视觉与公共日程网格 schedule-grid.module.css 保持同构:同样的 5 分钟行高、
+   同样的会场表头、同样的 kind 分档配色。--sched-* 仅是本组件的几何量,
+   颜色 / 字号 / 间距一律取 --yu- token。
+   小字(12px / 14px)不使用 opacity 或半透明色:弱化用 text-secondary,
+   有色卡片底上一律提到 text-primary。 */
+
+.root {
+  --sched-slot-h: 13px;   /* 5 分钟一格 */
+  --sched-gutter: 56px;   /* 时间刻度列 */
+  --sched-col-gap: var(--yu-space-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------------------ 工具条 */
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  background: var(--yu-color-bg-section);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+}
+
+.status {
+  min-width: 0;
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2) var(--yu-space-3);
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+}
+
+.badgeWarn,
+.badgeOk,
+.badgeMuted {
+  padding: 2px var(--yu-space-3);
+  border-radius: var(--yu-radius-pill);
+  border: 1px solid var(--yu-color-hairline);
+  font-size: var(--yu-text-footnote-size);
+  white-space: nowrap;
+}
+
+.badgeWarn {
+  color: var(--yu-color-warning-text);
+  border-color: var(--yu-color-warning-text);
+  background: var(--yu-color-bg-page);
+  font-weight: 500;
+}
+
+.badgeOk {
+  color: var(--yu-color-success-text);
+  border-color: var(--yu-color-success-text);
+  background: var(--yu-color-bg-page);
+}
+
+.badgeMuted {
+  color: var(--yu-color-text-secondary);
+  background: var(--yu-color-bg-page);
+}
+
+.versionNote {
+  color: var(--yu-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: var(--yu-space-2);
+  flex-wrap: wrap;
+}
+
+.btnPrimary,
+.btnSecondary,
+.btnGhost,
+.btnDanger {
+  appearance: none;
+  cursor: pointer;
+  border-radius: var(--yu-radius-pill);
+  padding: 7px 18px;
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  white-space: nowrap;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.btnPrimary {
+  border: 1px solid var(--yu-color-accent);
+  background: var(--yu-color-accent);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--yu-color-accent-hover);
+}
+
+.btnSecondary {
+  border: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-accent-text);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  border-color: var(--yu-color-accent-text);
+}
+
+.btnGhost {
+  border: 1px solid var(--yu-color-hairline);
+  background: transparent;
+  color: var(--yu-color-text-primary);
+}
+
+.btnGhost:hover {
+  background: var(--yu-color-bg-section);
+}
+
+.btnDanger {
+  border: 1px solid var(--yu-color-danger-text);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-danger-text);
+  margin-top: var(--yu-space-4);
+  width: 100%;
+}
+
+.btnDanger:hover {
+  background: var(--yu-color-bg-section);
+}
+
+.btnPrimary:disabled,
+.btnSecondary:disabled {
+  cursor: not-allowed;
+  border-color: var(--yu-color-hairline);
+  background: var(--yu-color-bg-section);
+  color: var(--yu-color-text-secondary);
+}
+
+/* -------------------------------------------------------------- 提示与告警 */
+
+.hint {
+  margin-top: var(--yu-space-3);
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+  max-width: 92ch;
+  text-wrap: pretty;
+}
+
+.error {
+  margin-top: var(--yu-space-3);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  border: 1px solid var(--yu-color-danger-text);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-danger-text);
+  font-size: var(--yu-text-footnote-size);
+}
+
+/* ------------------------------------------------------------ 冲突清单 */
+
+.conflictBox,
+.conflictBoxOk {
+  margin-top: var(--yu-space-4);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  border-radius: var(--yu-radius-card);
+  border: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-section);
+}
+
+.conflictBox {
+  border-color: var(--yu-color-danger-text);
+}
+
+.conflictTitle {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-callout-tracking);
+  color: var(--yu-color-text-primary);
+}
+
+.conflictBox .conflictTitle {
+  color: var(--yu-color-danger-text);
+}
+
+.conflictList {
+  list-style: none;
+  margin: var(--yu-space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--yu-space-1);
+}
+
+.conflictItem {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2);
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+}
+
+.conflictText {
+  color: var(--yu-color-text-primary);
+}
+
+.conflictGoto {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-accent-text);
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------- 日期 tab */
+
+.tabs {
+  display: flex;
+  gap: var(--yu-space-1);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  margin-top: var(--yu-space-5);
+  padding-bottom: var(--yu-space-2);
+  border-bottom: 1px solid var(--yu-color-hairline);
+}
+
+.tab {
+  appearance: none;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-2) var(--yu-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--yu-color-text-secondary);
+}
+
+.tabIndex {
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.tabDate {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-callout-tracking);
+  color: var(--yu-color-text-primary);
+}
+
+.tabCount {
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tab:hover {
+  background: var(--yu-color-bg-section);
+}
+
+.tab[aria-selected='true'] {
+  background: var(--yu-color-bg-section);
+  border-color: var(--yu-color-accent-text);
+}
+
+.tab[aria-selected='true'] .tabIndex,
+.tab[aria-selected='true'] .tabDate,
+.tab[aria-selected='true'] .tabCount {
+  color: var(--yu-color-accent-text);
+}
+
+/* ------------------------------------------------------------- 工作区布局 */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--yu-space-5);
+  margin-top: var(--yu-space-4);
+  align-items: start;
+}
+
+@media (min-width: 1080px) {
+  .workspace:has(.side) {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.gridPane {
+  min-width: 0;
+}
+
+.gridPane:focus-visible {
+  outline-offset: -3px;
+}
+
+.gridScroll {
+  overflow-x: auto;
+  padding-bottom: var(--yu-space-2);
+}
+
+/* -------------------------------------------------------------- 会场表头 */
+
+.roomHead {
+  display: grid;
+  column-gap: var(--sched-col-gap);
+  align-items: end;
+  min-width: 720px;
+  padding: var(--yu-space-2) 0;
+  border-bottom: 1px solid var(--yu-color-hairline);
+}
+
+.roomHeadGutter {
+  display: block;
+}
+
+.roomHeadCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding-left: var(--yu-space-2);
+}
+
+.roomHeadName {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-callout-tracking);
+  color: var(--yu-color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roomHeadLoc {
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ 网格 */
+
+.grid {
+  display: grid;
+  column-gap: var(--sched-col-gap);
+  grid-auto-rows: var(--sched-slot-h);
+  min-width: 720px;
+  margin-top: var(--yu-space-2);
+  list-style: none;
+  padding: 0;
+}
+
+.col {
+  z-index: 0;
+  border-left: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-page);
+}
+
+.tick {
+  z-index: 0;
+  border-top: 1px solid var(--yu-color-hairline);
+  pointer-events: none;
+}
+
+.tickLabel {
+  display: block;
+  width: var(--sched-gutter);
+  padding-right: var(--yu-space-2);
+  text-align: right;
+  transform: translateY(-0.65em);
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  font-variant-numeric: tabular-nums;
+  color: var(--yu-color-text-secondary);
+}
+
+/* ------------------------------------------------------------------ 卡片 */
+
+.card {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 2px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-elevated);
+}
+
+.cardButton {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  text-align: left;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding: var(--yu-space-1) var(--yu-space-2) var(--yu-space-2);
+}
+
+.cardButton:active {
+  cursor: grabbing;
+}
+
+.cardTime {
+  display: block;
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--yu-color-text-secondary);
+  white-space: nowrap;
+}
+
+.cardTitle {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: var(--yu-text-caption-size);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--yu-color-text-primary);
+}
+
+.cardSpeaker {
+  display: block;
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.25;
+  color: var(--yu-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clashBadge {
+  align-self: flex-start;
+  padding: 0 var(--yu-space-2);
+  border: 1px solid var(--yu-color-danger-text);
+  border-radius: var(--yu-radius-pill);
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--yu-color-danger-text);
+}
+
+/* 拖拽把手:指针专用装饰,键盘等价物是 Shift+↑↓(见 schedKeyboardHint) */
+.resizeHandle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  cursor: ns-resize;
+  touch-action: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--yu-color-text-secondary) 45%, transparent)
+  );
+}
+
+.cardActive {
+  border-color: var(--yu-color-accent);
+  box-shadow: inset 0 0 0 1px var(--yu-color-accent);
+}
+
+/* 冲突高亮:警示色描边 + 卡内「冲突」徽标(不只靠颜色传达) */
+.cardClash {
+  border-color: var(--yu-color-danger-text);
+  box-shadow: inset 0 0 0 2px var(--yu-color-danger-text);
+}
+
+/* ------------------------------------------------- kind 分档(与公共页同构) */
+
+.kind_talk {
+  background: var(--yu-color-bg-elevated);
+  border-color: var(--yu-color-hairline);
+}
+
+.kind_keynote {
+  background: color-mix(in srgb, var(--yu-color-accent) 12%, var(--yu-color-bg-elevated));
+  border-color: color-mix(in srgb, var(--yu-color-accent) 55%, transparent);
+}
+
+.kind_break {
+  background: var(--yu-color-bg-section);
+  border-style: dashed;
+}
+
+.kind_poster,
+.kind_social {
+  background: color-mix(in srgb, var(--yu-color-text-secondary) 12%, var(--yu-color-bg-elevated));
+  border-color: color-mix(in srgb, var(--yu-color-text-secondary) 38%, transparent);
+}
+
+/* 有色卡片底上的 12px 小字:次要色对比不足 4.5:1(WCAG 1.4.3),统一提到正文色 */
+.kind_keynote .cardTime,
+.kind_keynote .cardSpeaker,
+.kind_break .cardTime,
+.kind_break .cardSpeaker,
+.kind_poster .cardTime,
+.kind_poster .cardSpeaker,
+.kind_social .cardTime,
+.kind_social .cardSpeaker {
+  color: var(--yu-color-text-primary);
+}
+
+.emptyDay {
+  margin-top: var(--yu-space-4);
+  padding: var(--yu-space-4);
+  border: 1px dashed var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-secondary);
+}
+
+/* ------------------------------------------------------------------ 侧栏 */
+
+.side {
+  position: sticky;
+  top: 96px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  background: var(--yu-color-bg-section);
+  padding: var(--yu-space-4);
+}
+
+.sideHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--yu-space-3);
+}
+
+.sideTitle {
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  letter-spacing: var(--yu-text-headline-tracking);
+  color: var(--yu-color-text-primary);
+}
+
+.sideClose {
+  appearance: none;
+  border: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-page);
+  border-radius: var(--yu-radius-pill);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-primary);
+}
+
+.sideNote {
+  margin-top: var(--yu-space-2);
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.field {
+  margin-top: var(--yu-space-4);
+  min-width: 0;
+  display: grid;
+  gap: var(--yu-space-1);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--yu-space-3);
+}
+
+.label {
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 500;
+  color: var(--yu-color-text-primary);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px var(--yu-space-3);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-page);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-footnote-size);
+}
+
+.input:focus-visible {
+  border-color: var(--yu-color-accent);
+}
+
+.speakers {
+  margin-top: var(--yu-space-5);
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.speakerRow {
+  display: grid;
+  gap: var(--yu-space-2);
+  margin-top: var(--yu-space-2);
+  padding-bottom: var(--yu-space-2);
+  border-bottom: 1px solid var(--yu-color-hairline);
+}
+
+.rowRemove {
+  appearance: none;
+  justify-self: start;
+  border: 1px solid var(--yu-color-hairline);
+  background: var(--yu-color-bg-page);
+  border-radius: var(--yu-radius-pill);
+  padding: 3px 12px;
+  cursor: pointer;
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-primary);
+}
+
+/* ---------------------------------------------------------------- 断点 */
+
+@media (max-width: 1100px) {
+  .root {
+    --sched-slot-h: 12px;
+    --sched-gutter: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    position: static;
+  }
+
+  .side {
+    position: static;
+  }
+}
