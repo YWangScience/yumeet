@@ -549,17 +549,48 @@ let resvgCache: ResvgModule | null = null;
 
 async function loadResvg(): Promise<ResvgModule> {
   if (resvgCache) return resvgCache;
-  const { createRequire } = await import('node:module');
-  const { pathToFileURL } = await import('node:url');
-  const bases = [import.meta.url, pathToFileURL(`${process.cwd()}/index.js`).href];
   let lastError: unknown = null;
-  for (const base of bases) {
-    try {
-      resvgCache = createRequire(base)(RESVG_SPECIFIER) as ResvgModule;
+
+  /**
+   * 三条加载路径,按可靠性排序:
+   *  1. 动态 import(被 next.config 的 serverExternalPackages 标记为外部,
+   *     不会进包;这是生产构建下唯一稳定的方式)
+   *  2. createRequire(import.meta.url) —— 仅在真正的 ESM 运行时可用;
+   *     Next 的 CJS 产物里 import.meta.url 会被改写,故不能作为首选
+   *  3. createRequire(cwd) —— 从进程工作目录解析,兜底
+   */
+  try {
+    const mod = (await import(/* webpackIgnore: true */ RESVG_SPECIFIER)) as
+      ResvgModule & { default?: ResvgModule };
+    const resolved = mod.Resvg ? mod : mod.default;
+    if (resolved?.Resvg) {
+      resvgCache = resolved;
       return resvgCache;
-    } catch (e) {
-      lastError = e;
     }
+  } catch (e) {
+    lastError = e;
+  }
+
+  try {
+    const { createRequire } = await import('node:module');
+    const { pathToFileURL } = await import('node:url');
+    const bases: string[] = [];
+    try {
+      if (typeof import.meta?.url === 'string') bases.push(import.meta.url);
+    } catch { /* CJS 产物里访问 import.meta 会抛,忽略 */ }
+    bases.push(pathToFileURL(`${process.cwd()}/index.js`).href);
+
+    for (const base of bases) {
+      try {
+        const req = createRequire(base);
+        resvgCache = req(RESVG_SPECIFIER) as ResvgModule;
+        if (resvgCache?.Resvg) return resvgCache;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+  } catch (e) {
+    lastError = e;
   }
   throw new OnsiteError(
     'resvg_unavailable',
@@ -960,7 +991,8 @@ export function zipStore(entries: ZipEntry[], now = new Date()): Uint8Array {
 /** 文件名安全化:批量导出的每张 PNG 用「确认码-姓名.png」 */
 export function badgeFilename(subject: { confirmationCode: string; name: string }): string {
   const safe = subject.name
-    .replace(/[\\/:*?"<>| -]/g, '')
+    // 连字符置于字符类末尾之外时须转义,否则 |-] 被当成无效范围
+    .replace(/[\\/:*?"<>|\-]/g, '')
     .trim()
     .slice(0, 48) || 'attendee';
   return `${subject.confirmationCode}-${safe}.png`;

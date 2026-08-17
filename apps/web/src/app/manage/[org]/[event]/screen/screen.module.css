@@ -55,7 +55,7 @@
 
 .blockLabel {
   font-size: clamp(11px, 1vw, 14px); font-weight: 700;
-  letter-spacing: 0.12em; text-transform: uppercase; color: #8e8e93;
+  letter-spacing: 0.12em; text-transform: uppercase; color: #a1a1a6;
   display: flex; align-items: baseline; gap: var(--yu-space-3);
 }
 
@@ -71,7 +71,7 @@
 .nowRoom { color: #6cb6ff; font-weight: 600; }
 .nowRemain { color: #30d158; font-weight: 600; }
 .nowSpeakers { margin-top: 8px; font-size: clamp(14px, 1.5vw, 22px); color: #a1a1a6; }
-.idle { margin-top: 12px; font-size: clamp(20px, 2.6vw, 40px); color: #8e8e93; }
+.idle { margin-top: 12px; font-size: clamp(20px, 2.6vw, 40px); color: #a1a1a6; }
 
 .nextBox { border-top: 1px solid rgba(255,255,255,0.16); padding-top: clamp(12px, 1.6vw, 24px); }
 .nextIn { font-size: clamp(11px, 1vw, 14px); color: #30d158; letter-spacing: 0; text-transform: none; font-weight: 600; }
@@ -82,7 +82,7 @@
 .laterBox { border-top: 1px solid rgba(255,255,255,0.16); padding-top: clamp(10px, 1.2vw, 18px); }
 .laterList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
 .laterItem { display: flex; gap: clamp(10px, 1.2vw, 20px); align-items: baseline; font-size: clamp(12px, 1.2vw, 18px); color: #c7c7cc; }
-.laterTime { font-variant-numeric: tabular-nums; color: #8e8e93; flex: 0 0 auto; min-width: 3.6em; }
+.laterTime { font-variant-numeric: tabular-nums; color: #a1a1a6; flex: 0 0 auto; min-width: 3.6em; }
 .laterTitle { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .laterRoom { color: #6cb6ff; flex: 0 0 auto; }
 
