@@ -83,6 +83,34 @@ export interface EventModules {
 
 export type TokenOverrides = Record<string, string>;
 
+/**
+ * 活动的支付方式配置(存 events.settings 或独立配置)。
+ * 线下方式需要把「怎么付」讲清楚:账户信息、收款码、以及附言要求。
+ */
+export interface PaymentConfig {
+  /** 启用的方式,按显示顺序 */
+  enabled: ('stripe' | 'bank_transfer' | 'alipay' | 'wechat' | 'onsite')[];
+  bankTransfer?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+    swift?: string;
+    iban?: string;
+    /** 附言要求,如「请务必备注参考号」 */
+    memoHint?: I18nString;
+    instructions?: I18nString;
+  };
+  alipay?: { qrFileId?: string; qrUrl?: string; payee?: string; instructions?: I18nString };
+  wechat?: { qrFileId?: string; qrUrl?: string; payee?: string; instructions?: I18nString };
+  onsite?: {
+    /** 现场可用的结算方式说明 */
+    accepts?: I18nString;
+    instructions?: I18nString;
+  };
+  /** 线下付款的截止说明 */
+  offlineDeadlineHint?: I18nString;
+}
+
 export interface OrgSettings {
   contactEmail?: string;
   supportUrl?: string;

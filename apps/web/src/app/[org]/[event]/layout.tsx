@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getEventBySlug, getEventForms, listNavPages, speakerHighlights } from '@yumeet/core';
 import { SiteNav } from '@/components/site-nav';
 import { ThemeStyle } from '@/components/theme-style';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator } from '@/lib/i18n';
 
 interface Props {
@@ -12,17 +12,12 @@ interface Props {
   params: Promise<{ org: string; event: string }>;
 }
 
-/** 绑定了自定义域名时,导航链接省去 /org/event 前缀(ch07 §7.6) */
-const BOUND_HOSTS = new Set(['mg18.ywang.science', 'mg17.ywang.science']);
-
 export default async function EventLayout({ children, params }: Props) {
   const { org, event } = await params;
   const found = await getEventBySlug(org, event);
   if (!found) notFound();
 
-  const host = (await headers()).get('host')?.toLowerCase() ?? '';
-  const bound = BOUND_HOSTS.has(host);
-  const base = bound ? '' : `/${org}/${event}`;
+  const base = await eventBase(org, event);
 
   const locale = await resolveLocale();
   const tt = translator(locale);

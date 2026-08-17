@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getEventBySlug, listSpeakers } from '@yumeet/core';
 import { SpeakerGrid } from '@/components/speaker-grid';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent } from '@/lib/i18n';
 import styles from './speakers.module.css';
 
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SpeakersPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const locale = await resolveLocale(await searchParams);
   const tt = translator(locale);
 
@@ -36,7 +38,7 @@ export default async function SpeakersPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
+        <Link href={`${base}`}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('speakers')}</span>
       </nav>

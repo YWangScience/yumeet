@@ -1,0 +1,37 @@
+.form { display: grid; gap: var(--yu-space-3); }
+.label { font-size: var(--yu-text-callout-size); font-weight: 500; }
+.input {
+  font: inherit; font-size: var(--yu-text-body-size);
+  color: var(--yu-color-text-primary); background: var(--yu-color-bg-page);
+  border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-control);
+  padding: 11px 14px; width: 100%;
+}
+.input:focus { border-color: var(--yu-color-accent); box-shadow: 0 0 0 4px var(--yu-color-focus-ring-soft); outline: none; }
+.input:focus-visible { outline: 3px solid var(--yu-color-focus-ring); outline-offset: 2px; }
+.submit {
+  font: inherit; font-size: var(--yu-text-body-size); font-weight: 500;
+  background: var(--yu-color-accent); color: #fff; border: 0;
+  border-radius: var(--yu-radius-pill); padding: 12px 24px; cursor: pointer;
+  margin-top: var(--yu-space-2);
+}
+.submit:hover:not(:disabled) { background: var(--yu-color-accent-hover); }
+.submit:disabled { opacity: 0.5; cursor: progress; }
+.error {
+  background: color-mix(in srgb, var(--yu-color-danger-fill) 12%, transparent);
+  color: var(--yu-color-danger-text); border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-3) var(--yu-space-4); font-size: var(--yu-text-callout-size);
+}
+.sent {
+  background: color-mix(in srgb, var(--yu-color-success-fill) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--yu-color-success-fill) 35%, transparent);
+  border-radius: var(--yu-radius-card); padding: var(--yu-space-5);
+}
+.sentTitle { font-size: var(--yu-text-headline-size); font-weight: 600; color: var(--yu-color-success-text); }
+.sentBody { margin-top: var(--yu-space-2); line-height: 1.55; font-size: var(--yu-text-callout-size); }
+.devHint { margin-top: var(--yu-space-4); font-size: var(--yu-text-footnote-size); display: flex; gap: var(--yu-space-2); flex-wrap: wrap; align-items: baseline; }
+.devLabel {
+  font-weight: 600; color: var(--yu-color-warning-text);
+  background: color-mix(in srgb, var(--yu-color-warning-fill) 18%, transparent);
+  padding: 1px 8px; border-radius: var(--yu-radius-pill); font-size: var(--yu-text-caption-size);
+}
+.devHint a { color: var(--yu-color-accent-text); word-break: break-all; }

@@ -11,6 +11,7 @@ import {
 import { formatDateRange } from '@/lib/format';
 import styles from './schedule-page.module.css';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent } from '@/lib/i18n';
 
 // ISR:公共页静态化,发布后由 revalidate 更新(ch13 §13.2)
@@ -91,6 +92,7 @@ export default async function SchedulePage({ params, searchParams }: Props) {
   const locale = await resolveLocale(await searchParams);
   const tt = translator(locale);
   const { org: orgSlug, event: eventSlug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const found = await getEventBySlug(orgSlug, eventSlug);
   if (!found || found.event.status === 'draft') notFound();
 
@@ -138,7 +140,7 @@ export default async function SchedulePage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="面包屑">
-        <Link href={`/${orgSlug}/${eventSlug}`}>{event.title}</Link>
+        <Link href={`${base}`}>{event.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('schedule')}</span>
       </nav>

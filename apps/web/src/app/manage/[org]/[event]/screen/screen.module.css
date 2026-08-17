@@ -1,0 +1,94 @@
+/*
+ * 会场屏样式(ch05 §5.2.3)—— 按「三米外看得清」设计
+ * 大字号、高对比、无装饰;深色底减少投影漏光。
+ * 会场屏是唯一允许偏离常规字阶的场景,但对比度仍须 ≥4.5:1。
+ */
+.screen {
+  min-height: 100vh;
+  background: #000;
+  color: #f5f5f7;
+  display: flex; flex-direction: column;
+}
+
+/* 值班同事用的低调控制条,不抢屏幕主体 */
+.chrome {
+  display: flex; align-items: center; gap: var(--yu-space-4);
+  padding: var(--yu-space-2) var(--yu-space-5);
+  border-bottom: 1px solid rgba(255,255,255,0.16);
+  flex-wrap: wrap;
+}
+.chromeLink { color: #2997ff; text-decoration: none; font-size: 13px; white-space: nowrap; }
+.chromeLink:hover { text-decoration: underline; }
+.chromeRooms { display: flex; gap: 6px; flex-wrap: wrap; }
+.chromeChip {
+  font-size: 12px; color: #c7c7cc; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 980px;
+  padding: 3px 11px; white-space: nowrap;
+}
+.chromeChip:hover { color: #fff; border-color: #2997ff; text-decoration: none; }
+.chromeChipActive { background: #2997ff; border-color: #2997ff; color: #fff; }
+
+.stage { flex: 1; display: flex; flex-direction: column; padding: clamp(20px, 3vw, 48px); gap: clamp(16px, 2vw, 32px); }
+
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--yu-space-6); }
+.venue { font-size: clamp(20px, 2.4vw, 34px); font-weight: 600; letter-spacing: -0.01em; }
+.location { margin-top: 4px; font-size: clamp(13px, 1.2vw, 18px); color: #a1a1a6; }
+.clockBox { text-align: right; flex: 0 0 auto; }
+.clock { font-size: clamp(32px, 4.5vw, 68px); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+.clockTz { margin-top: 6px; font-size: clamp(11px, 1vw, 14px); color: #a1a1a6; display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.dotLive, .dotOffline { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dotLive { background: #30d158; }
+.dotOffline { background: #ff453a; }
+
+/* 公告最高优先级:占满宽度、颜色区分等级 */
+.alerts { display: grid; gap: 10px; }
+.alert {
+  font-size: clamp(18px, 2.2vw, 32px); font-weight: 600; line-height: 1.35;
+  padding: clamp(12px, 1.4vw, 22px) clamp(16px, 1.8vw, 28px);
+  border-radius: 16px; text-wrap: pretty;
+  background: rgba(255,214,10,0.16); color: #ffd60a;
+  border: 2px solid rgba(255,214,10,0.5);
+}
+.alert_info { background: rgba(41,151,255,0.16); color: #6cb6ff; border-color: rgba(41,151,255,0.5); }
+.alert_warning { background: rgba(255,159,10,0.16); color: #ffb340; border-color: rgba(255,159,10,0.5); }
+.alert_urgent { background: rgba(255,69,58,0.18); color: #ff6961; border-color: rgba(255,69,58,0.6); }
+
+.blockLabel {
+  font-size: clamp(11px, 1vw, 14px); font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: #8e8e93;
+  display: flex; align-items: baseline; gap: var(--yu-space-3);
+}
+
+.nowBox { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.nowItem + .nowItem { margin-top: clamp(16px, 2vw, 32px); padding-top: clamp(16px, 2vw, 32px); border-top: 1px solid rgba(255,255,255,0.16); }
+.nowTitle {
+  margin-top: clamp(8px, 1vw, 16px);
+  font-size: clamp(30px, 5.2vw, 82px); font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.06; text-wrap: balance;
+}
+.nowMeta { margin-top: clamp(10px, 1.2vw, 20px); display: flex; gap: clamp(12px, 1.6vw, 28px); flex-wrap: wrap; font-size: clamp(15px, 1.7vw, 26px); color: #c7c7cc; }
+.nowTime { font-variant-numeric: tabular-nums; font-weight: 600; }
+.nowRoom { color: #6cb6ff; font-weight: 600; }
+.nowRemain { color: #30d158; font-weight: 600; }
+.nowSpeakers { margin-top: 8px; font-size: clamp(14px, 1.5vw, 22px); color: #a1a1a6; }
+.idle { margin-top: 12px; font-size: clamp(20px, 2.6vw, 40px); color: #8e8e93; }
+
+.nextBox { border-top: 1px solid rgba(255,255,255,0.16); padding-top: clamp(12px, 1.6vw, 24px); }
+.nextIn { font-size: clamp(11px, 1vw, 14px); color: #30d158; letter-spacing: 0; text-transform: none; font-weight: 600; }
+.nextItem + .nextItem { margin-top: 12px; }
+.nextTitle { margin-top: 8px; font-size: clamp(18px, 2.4vw, 36px); font-weight: 600; line-height: 1.2; text-wrap: balance; }
+.nextMeta { margin-top: 6px; display: flex; gap: clamp(10px, 1.2vw, 20px); flex-wrap: wrap; font-size: clamp(13px, 1.3vw, 19px); color: #a1a1a6; font-variant-numeric: tabular-nums; }
+
+.laterBox { border-top: 1px solid rgba(255,255,255,0.16); padding-top: clamp(10px, 1.2vw, 18px); }
+.laterList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.laterItem { display: flex; gap: clamp(10px, 1.2vw, 20px); align-items: baseline; font-size: clamp(12px, 1.2vw, 18px); color: #c7c7cc; }
+.laterTime { font-variant-numeric: tabular-nums; color: #8e8e93; flex: 0 0 auto; min-width: 3.6em; }
+.laterTitle { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.laterRoom { color: #6cb6ff; flex: 0 0 auto; }
+
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* CSS Module 不允许全局 * 选择器,限定到本模块根元素内 */
+@media (prefers-reduced-motion: reduce) {
+  .screen, .screen * { transition: none !important; animation: none !important; }
+}

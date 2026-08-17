@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getEventBySlug, searchAbstracts, listTracks, encodeId } from '@yumeet/core';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent } from '@/lib/i18n';
 import styles from './abstracts.module.css';
 
@@ -23,6 +24,7 @@ const PER_PAGE = 25;
 
 export default async function AbstractsPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const sp = await searchParams;
   const locale = await resolveLocale(sp);
   const tt = translator(locale);
@@ -53,13 +55,13 @@ export default async function AbstractsPage({ params, searchParams }: Props) {
       if (v === '' || v === 0) p.delete(k); else p.set(k, String(v));
     }
     const s = p.toString();
-    return `/${orgSlug}/${eventSlug}/abstracts${s ? `?${s}` : ''}`;
+    return `${base}/abstracts${s ? `?${s}` : ''}`;
   };
 
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
+        <Link href={`${base}`}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('abstracts')}</span>
       </nav>
@@ -109,7 +111,7 @@ export default async function AbstractsPage({ params, searchParams }: Props) {
             <li key={s.id} className={styles.item}>
               <article>
                 <h2 className={styles.itemTitle}>
-                  <Link href={`/${orgSlug}/${eventSlug}/abstracts/${encodeId('submission', s.id)}`}>
+                  <Link href={`${base}/abstracts/${encodeId('submission', s.id)}`}>
                     {s.title}
                   </Link>
                 </h2>

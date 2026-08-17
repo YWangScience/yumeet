@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getEventBySlug, getEventForms, getEventTickets, encodeId, type FormField } from '@yumeet/core';
 import { RegisterForm } from '@/components/register-form';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent, INTL_LOCALE } from '@/lib/i18n';
 import styles from './register.module.css';
 
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function RegisterPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const locale = await resolveLocale(await searchParams);
   const tt = translator(locale);
   const found = await getEventBySlug(orgSlug, eventSlug);
@@ -54,7 +56,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="面包屑">
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
+        <Link href={`${base}`}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('registration')}</span>
       </nav>

@@ -7,6 +7,7 @@ import {
 } from '@yumeet/core';
 import { SubmissionForm, type AuthorDraft } from '@/components/submission-form';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent } from '@/lib/i18n';
 import styles from '../cfp.module.css';
 
@@ -36,6 +37,7 @@ const toDraft = (a: Author): AuthorDraft => ({
 /** 投稿表单页(ch04 §4.3);带 ?draft={token} 时续写既有草稿 */
 export default async function CfpSubmitPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const sp = await searchParams;
   const locale = await resolveLocale(sp);
   const tt = translator(locale);
@@ -58,9 +60,9 @@ export default async function CfpSubmitPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label={locale === 'zh' ? '面包屑' : 'Breadcrumb'}>
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
+        <Link href={`${base}`}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
-        <Link href={`/${orgSlug}/${eventSlug}/cfp?lang=${locale}`}>{tt('cfpTitle')}</Link>
+        <Link href={`${base}/cfp?lang=${locale}`}>{tt('cfpTitle')}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('subFormTitle')}</span>
       </nav>

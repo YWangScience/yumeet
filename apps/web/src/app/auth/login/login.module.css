@@ -1,0 +1,21 @@
+.page { min-height: 80vh; display: grid; place-items: center; padding: var(--yu-space-10) var(--yu-space-6); }
+.card {
+  width: 100%; max-width: 420px;
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-10) var(--yu-space-8);
+}
+.wordmark { font-size: var(--yu-text-callout-size); font-weight: 600; color: var(--yu-color-text-secondary); margin-bottom: var(--yu-space-5); }
+.title { font-size: var(--yu-text-title-2-size); font-weight: var(--yu-text-title-2-weight); letter-spacing: var(--yu-text-title-2-tracking); }
+.lede { margin: var(--yu-space-3) 0 var(--yu-space-6); color: var(--yu-color-text-secondary); line-height: 1.55; }
+.error {
+  background: color-mix(in srgb, var(--yu-color-danger-fill) 12%, transparent);
+  color: var(--yu-color-danger-text);
+  border: 1px solid color-mix(in srgb, var(--yu-color-danger-fill) 35%, transparent);
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  margin-bottom: var(--yu-space-5);
+  font-size: var(--yu-text-callout-size);
+}
+.footnote { margin-top: var(--yu-space-6); font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); line-height: 1.5; }

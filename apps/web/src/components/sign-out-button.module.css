@@ -1,0 +1,10 @@
+.btn {
+  font: inherit; font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-secondary);
+  background: transparent; border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill); padding: 4px 12px; cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) { color: var(--yu-color-text-primary); border-color: var(--yu-color-accent); }
+.btn:focus-visible { outline: 3px solid var(--yu-color-focus-ring); outline-offset: 2px; }
+.btn:disabled { opacity: 0.5; cursor: progress; }

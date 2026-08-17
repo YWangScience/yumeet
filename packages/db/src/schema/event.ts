@@ -5,7 +5,7 @@ import {
   pgTable, pgEnum, uuid, text, boolean, integer, jsonb, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';
 import { organizations, ts } from './identity';
-import type { EventContent, EventModules, FormField, TokenOverrides, Venue } from './types';
+import type { EventContent, EventModules, FormField, PaymentConfig, TokenOverrides, Venue } from './types';
 
 export const eventStatus = pgEnum('event_status', ['draft', 'published', 'archived']);
 // live / ended 是按 starts_at / ends_at 派生的展示态,不入库(见 ch05 §5.4)
@@ -27,6 +27,8 @@ export const events = pgTable('events', {
   modules: jsonb('modules').$type<EventModules>().notNull().default({}),
   /** 内容多语言:{ en: { title, subtitle, description }, zh: {...} }(ch09 §9.3 I18nString) */
   contentI18n: jsonb('content_i18n').$type<Record<string, EventContent>>(),
+  /** 支付方式配置(线下方式的账户信息与说明),见 types.ts PaymentConfig */
+  paymentConfig: jsonb('payment_config').$type<PaymentConfig>(),
   themeId: text('theme_id').notNull().default('cupertino'),
   themeOverrides: jsonb('theme_overrides').$type<TokenOverrides>(),
   publishedAt: ts('published_at'),

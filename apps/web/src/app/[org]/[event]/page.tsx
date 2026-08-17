@@ -8,6 +8,7 @@ import {
 import { EventHero } from '@/components/event-hero';
 import { SpeakerGrid } from '@/components/speaker-grid';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent } from '@/lib/i18n';
 import { ScheduleGlance } from '@/components/schedule-glance';
 import { TicketList } from '@/components/ticket-list';
@@ -41,6 +42,7 @@ export default async function EventPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug } = await params;
   const locale = await resolveLocale(await searchParams);
   const tt = translator(locale);
+  const base = await eventBase(orgSlug, eventSlug);
   const found = await getEventBySlug(orgSlug, eventSlug);
   if (!found || found.event.status === 'draft') notFound();
 
@@ -62,7 +64,7 @@ export default async function EventPage({ params, searchParams }: Props) {
     description: content.subtitle,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
-    url: `/${orgSlug}/${eventSlug}`,
+    url: `${base || `/${orgSlug}/${eventSlug}`}`,
     venue: event.venue,
     organizer: org.name,
   });
@@ -96,7 +98,7 @@ export default async function EventPage({ params, searchParams }: Props) {
           <section className={styles.section} aria-labelledby="speakers">
             <div className={styles.sectionHead}>
               <h2 id="speakers" className={styles.sectionTitle}>{tt('speakers')}</h2>
-              <Link className={styles.moreLink} href={`/${orgSlug}/${eventSlug}/speakers`}>
+              <Link className={styles.moreLink} href={`${base}/speakers`}>
                 {tt('seeAllSpeakers', { n: speakers.total })}
               </Link>
             </div>
@@ -114,7 +116,7 @@ export default async function EventPage({ params, searchParams }: Props) {
           <section className={styles.section} aria-labelledby="committees">
             <div className={styles.sectionHead}>
               <h2 id="committees" className={styles.sectionTitle}>{tt('committees')}</h2>
-              <Link className={styles.moreLink} href={`/${orgSlug}/${eventSlug}/committees`}>
+              <Link className={styles.moreLink} href={`${base}/committees`}>
                 {tt('peopleCount', { n: speakers.committee })}
               </Link>
             </div>
@@ -126,7 +128,7 @@ export default async function EventPage({ params, searchParams }: Props) {
           <section className={styles.section} aria-labelledby="schedule">
             <div className={styles.sectionHead}>
               <h2 id="schedule" className={styles.sectionTitle}>{tt('schedule')}</h2>
-              <Link className={styles.moreLink} href={`/${orgSlug}/${eventSlug}/schedule`}>
+              <Link className={styles.moreLink} href={`${base}/schedule`}>
                 {tt('fullSchedule')}
               </Link>
             </div>
@@ -144,7 +146,7 @@ export default async function EventPage({ params, searchParams }: Props) {
             <div className={styles.sectionHead}>
               <h2 id="tickets" className={styles.sectionTitle}>{tt('registration')}</h2>
               {form && (
-                <Link className={styles.moreLink} href={`/${orgSlug}/${eventSlug}/register`}>
+                <Link className={styles.moreLink} href={`${base}/register`}>
                   {tt('startRegistration')}
                 </Link>
               )}

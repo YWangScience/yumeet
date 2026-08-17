@@ -19,6 +19,10 @@ import { createQueues, QUEUE_EMAIL, QUEUE_WEBHOOK, type EmailJob, type WebhookJo
 import { startOutboxPoller } from './outbox';
 import { createWebhookProcessor } from './handlers/webhook';
 import { processEmailJob } from './handlers/email';
+import {
+  createRetentionQueue, scheduleRetention, processRetentionJob,
+  QUEUE_RETENTION, type RetentionJob,
+} from './handlers/retention';
 import { nextRetryDelayMs } from '@yumeet/core';
 
 async function main(): Promise<void> {
@@ -46,6 +50,18 @@ async function main(): Promise<void> {
     concurrency: config.emailConcurrency,
   });
 
+  // 数据保留期清理(ch12 §12.3):每日 04:00 UTC 的 repeatable job
+  const retentionQueue = createRetentionQueue(connection);
+  const retentionWorker = new Worker<RetentionJob>(QUEUE_RETENTION, processRetentionJob, {
+    connection,
+    prefix: config.queuePrefix,
+    concurrency: 1, // 全库扫描,单并发即可,也避免与自己抢锁
+  });
+  await scheduleRetention(retentionQueue);
+  retentionWorker.on('failed', (job: Job<RetentionJob> | undefined, err: Error) => {
+    log.error('保留期清理作业失败', { jobId: job?.id, err: err.message });
+  });
+
   webhookWorker.on('failed', (job: Job<WebhookJob> | undefined, err: Error) => {
     const exhausted = job ? job.attemptsMade >= (job.opts.attempts ?? 1) : false;
     log[exhausted ? 'error' : 'warn'](
@@ -59,7 +75,7 @@ async function main(): Promise<void> {
   emailWorker.on('failed', (job: Job<EmailJob> | undefined, err: Error) => {
     log.warn('邮件作业失败', { jobId: job?.id, template: job?.data.template, err: err.message });
   });
-  for (const w of [webhookWorker, emailWorker]) {
+  for (const w of [webhookWorker, emailWorker, retentionWorker]) {
     w.on('error', (err) => log.error('BullMQ worker 错误', errFields(err)));
   }
 
@@ -90,9 +106,9 @@ async function main(): Promise<void> {
     try {
       await poller.stop();                                   // 1) 停止认领新的 outbox
       await Promise.all([                                    // 2) 等在途作业跑完
-        webhookWorker.close(), emailWorker.close(),
+        webhookWorker.close(), emailWorker.close(), retentionWorker.close(),
       ]);
-      await Promise.all([queues.webhook.close(), queues.email.close()]);
+      await Promise.all([queues.webhook.close(), queues.email.close(), retentionQueue.close()]);
       await connection.quit();                               // 3) 关连接
       await pgSql.end({ timeout: 5 });
       clearTimeout(forceTimer);

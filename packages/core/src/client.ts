@@ -12,3 +12,8 @@ export * from './themes/index';
 // (ch05 §5.1.2「不允许出现两套判定逻辑」)。services/schedule.ts 是纯模块,
 // 不 import @yumeet/db 也不 import node: 内置模块,可安全进客户端包。
 export * from './services/schedule';
+
+// 会场屏等客户端组件需要的纯类型(服务实现留在服务端入口)
+export type {
+  ScreenState, ScreenSession, Announcement, AnnouncementLevel,
+} from './services/onsite';

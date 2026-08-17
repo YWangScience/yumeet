@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getEventBySlug, listCommittee } from '@yumeet/core';
 import { CommitteeList } from '@/components/committee-list';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { translator, eventContent, type TKey } from '@/lib/i18n';
 import styles from './committees.module.css';
 
@@ -28,6 +29,7 @@ const GROUPS: { key: string; label: TKey }[] = [
 
 export default async function CommitteesPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const locale = await resolveLocale(await searchParams);
   const tt = translator(locale);
 
@@ -42,7 +44,7 @@ export default async function CommitteesPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
+        <Link href={`${base}`}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{tt('committees')}</span>
       </nav>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getEventBySlug, getEventPage, listEventPages } from '@yumeet/core';
 import { Markdown } from '@/components/markdown';
 import { resolveLocale } from '@/lib/locale-server';
+import { eventBase } from '@/lib/event-base';
 import { eventContent, pick } from '@/lib/i18n';
 import styles from './page-view.module.css';
 
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventCustomPage({ params, searchParams }: Props) {
   const { org: orgSlug, event: eventSlug, slug } = await params;
+  const base = await eventBase(orgSlug, eventSlug);
   const locale = await resolveLocale(await searchParams);
 
   const found = await getEventBySlug(orgSlug, eventSlug);
@@ -41,7 +43,7 @@ export default async function EventCustomPage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
+        <Link href={`${base}`}>{content.title}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{title}</span>
       </nav>
@@ -64,7 +66,7 @@ export default async function EventCustomPage({ params, searchParams }: Props) {
                   <li key={s.id}>
                     <Link
                       className={s.slug === slug ? styles.sidebarActive : styles.sidebarLink}
-                      href={`/${orgSlug}/${eventSlug}/p/${s.slug}`}
+                      href={`${base}/p/${s.slug}`}
                       aria-current={s.slug === slug ? 'page' : undefined}
                     >
                       {t}

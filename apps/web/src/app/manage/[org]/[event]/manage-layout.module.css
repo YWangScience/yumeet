@@ -1,0 +1,32 @@
+.shell { min-height: 100vh; }
+.bar {
+  position: sticky; top: 0; z-index: 50; height: 48px;
+  background: color-mix(in srgb, var(--yu-color-bg-page) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--yu-color-hairline);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bar { background: var(--yu-color-bg-page); }
+}
+.barInner {
+  max-width: 1180px; height: 100%; margin: 0 auto; padding: 0 var(--yu-space-5);
+  display: flex; align-items: center; gap: var(--yu-space-5);
+}
+.brand {
+  font-size: var(--yu-text-footnote-size); font-weight: 600;
+  color: var(--yu-color-text-primary); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 22%;
+}
+.nav { display: flex; gap: var(--yu-space-4); flex: 1; overflow-x: auto; }
+.navLink {
+  font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary);
+  text-decoration: none; white-space: nowrap;
+}
+.navLink:hover { color: var(--yu-color-text-primary); }
+.account { display: flex; align-items: center; gap: var(--yu-space-3); }
+.email {
+  font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary);
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@media (max-width: 720px) { .email { display: none; } .brand { max-width: 34%; } }
