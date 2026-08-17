@@ -1,5 +1,11 @@
-node_modules/
-.DS_Store
+
+# 运行时
 *.log
+*.tsbuildinfo
+.DS_Store
 .env
 .env.local
+.next/
+dist/
+next-env.d.ts
+node_modules/

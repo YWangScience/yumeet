@@ -1,0 +1,15 @@
+{
+  "name": "yumeet",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "dev": "pnpm --filter @yumeet/web dev",
+    "build": "pnpm --filter @yumeet/web build",
+    "db:push": "pnpm --filter @yumeet/db push",
+    "db:seed": "pnpm --filter @yumeet/db seed",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}

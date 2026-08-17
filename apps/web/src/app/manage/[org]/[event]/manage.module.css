@@ -1,0 +1,48 @@
+.page { max-width: 1100px; margin: 0 auto; padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24); }
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--yu-space-4); flex-wrap: wrap; margin-bottom: var(--yu-space-10); }
+.eyebrow { font-size: var(--yu-text-footnote-size); letter-spacing: 0.06em; text-transform: uppercase; color: var(--yu-color-text-secondary); }
+.title { margin-top: var(--yu-space-2); font-size: var(--yu-text-title-2-size); font-weight: var(--yu-text-title-2-weight); letter-spacing: var(--yu-text-title-2-tracking); line-height: var(--yu-text-title-2-leading); text-wrap: balance; }
+.meta { margin-top: var(--yu-space-2); color: var(--yu-color-text-secondary); font-size: var(--yu-text-callout-size); }
+.statusChip { color: var(--yu-color-success-text); font-weight: 500; }
+.viewSite { font-size: var(--yu-text-callout-size); color: var(--yu-color-accent-text); text-decoration: none; white-space: nowrap; }
+.viewSite:hover { text-decoration: underline; }
+
+.kpis { display: grid; gap: var(--yu-space-3); grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: var(--yu-space-12); }
+.kpi { background: var(--yu-color-bg-section); border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-card); padding: var(--yu-space-5); display: grid; gap: var(--yu-space-1); }
+.kpiLabel { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.kpiValue { font-size: var(--yu-text-title-3-size); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.kpiSub { font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary); }
+
+.section { margin-bottom: var(--yu-space-12); }
+.sectionHead { display: flex; justify-content: space-between; align-items: baseline; gap: var(--yu-space-4); flex-wrap: wrap; }
+.sectionTitle { font-size: var(--yu-text-title-3-size); font-weight: var(--yu-text-title-3-weight); letter-spacing: var(--yu-text-title-3-tracking); margin-bottom: var(--yu-space-4); }
+.buttonSecondary { display: inline-block; padding: 8px 18px; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-pill); color: var(--yu-color-accent-text); font-size: var(--yu-text-footnote-size); text-decoration: none; }
+.buttonSecondary:hover { border-color: var(--yu-color-accent-text); text-decoration: none; }
+
+.filters { display: flex; gap: var(--yu-space-2); flex-wrap: wrap; margin-bottom: var(--yu-space-4); }
+.filter {
+  font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary);
+  padding: 5px 14px; border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill); text-decoration: none;
+}
+.filter:hover { border-color: var(--yu-color-accent-text); color: var(--yu-color-text-primary); text-decoration: none; }
+.filterActive { background: var(--yu-color-accent); border-color: var(--yu-color-accent-text); color: #fff; }
+.filterCount { font-variant-numeric: tabular-nums; opacity: 0.75; margin-left: 4px; }
+
+.tableWrap { overflow-x: auto; border: 1px solid var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--yu-text-footnote-size); }
+.table thead th {
+  text-align: left; padding: var(--yu-space-3) var(--yu-space-4);
+  background: var(--yu-color-bg-section);
+  border-bottom: 1px solid var(--yu-color-hairline);
+  font-weight: 600; color: var(--yu-color-text-secondary);
+  font-size: var(--yu-text-caption-size); letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.table td { padding: var(--yu-space-3) var(--yu-space-4); border-bottom: 1px solid var(--yu-color-hairline); vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.num { font-variant-numeric: tabular-nums; }
+.low { color: var(--yu-color-warning-text); font-weight: 600; }
+.empty { color: var(--yu-color-text-secondary); padding: var(--yu-space-8); text-align: center; border: 1px dashed var(--yu-color-hairline); border-radius: var(--yu-radius-card); }
+.pageHint { margin-top: var(--yu-space-3); font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary); }
+@media (max-width: 640px) { .page { padding: var(--yu-space-6) var(--yu-space-4) var(--yu-space-16); } .title { font-size: 28px; } }

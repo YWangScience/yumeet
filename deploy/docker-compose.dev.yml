@@ -1,0 +1,27 @@
+name: yumeet-dev
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: yumeet
+      POSTGRES_PASSWORD: yumeet_dev
+      POSTGRES_DB: yumeet
+    ports: ["5433:5432"]
+    volumes: [yumeet_pg:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yumeet"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    ports: ["6380:6379"]
+    volumes: [yumeet_redis:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  yumeet_pg:
+  yumeet_redis:

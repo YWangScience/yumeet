@@ -1,0 +1,135 @@
+/* 完整日程页外壳:面包屑 + 页头 + .ics 入口。网格本体见 schedule-grid.module.css */
+
+.page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24);
+}
+
+.breadcrumb {
+  font-size: var(--yu-text-footnote-size);
+  letter-spacing: var(--yu-text-footnote-tracking);
+  color: var(--yu-color-text-secondary);
+  margin-bottom: var(--yu-space-5);
+}
+
+.breadcrumb a {
+  color: var(--yu-color-accent);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--yu-space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--yu-space-6);
+}
+
+.headerMain {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--yu-text-title-1-size);
+  font-weight: var(--yu-text-title-1-weight);
+  letter-spacing: var(--yu-text-title-1-tracking);
+  line-height: var(--yu-text-title-1-leading);
+  text-wrap: balance;
+}
+
+.meta {
+  margin: var(--yu-space-3) 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2);
+  font-size: var(--yu-text-callout-size);
+  letter-spacing: var(--yu-text-callout-tracking);
+  color: var(--yu-color-text-secondary);
+}
+
+.dot {
+  color: var(--yu-color-hairline);
+}
+
+.status {
+  font-size: var(--yu-text-caption-size);
+  font-weight: 500;
+  line-height: var(--yu-text-caption-leading);
+  padding: 2px var(--yu-space-2);
+  border-radius: var(--yu-radius-pill);
+  border: 1px solid color-mix(in srgb, var(--yu-color-text-secondary) 40%, transparent);
+  color: var(--yu-color-text-secondary);
+  margin-left: var(--yu-space-1);
+}
+
+.status_live {
+  color: var(--yu-color-success-text);
+  border-color: color-mix(in srgb, var(--yu-color-success-fill) 55%, transparent);
+  background: color-mix(in srgb, var(--yu-color-success-fill) 12%, transparent);
+}
+
+.status_published {
+  color: var(--yu-color-accent);
+  border-color: color-mix(in srgb, var(--yu-color-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--yu-color-accent) 10%, transparent);
+}
+
+.icsButton {
+  flex: 0 0 auto;
+  display: inline-block;
+  padding: 10px var(--yu-space-5);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  color: var(--yu-color-accent);
+  font-size: var(--yu-text-callout-size);
+  letter-spacing: var(--yu-text-callout-tracking);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.icsButton:hover {
+  border-color: var(--yu-color-accent);
+  background: color-mix(in srgb, var(--yu-color-accent) 8%, transparent);
+}
+
+.empty {
+  margin-top: var(--yu-space-10);
+  padding: var(--yu-space-8);
+  text-align: center;
+  color: var(--yu-color-text-secondary);
+  background: var(--yu-color-bg-section);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--yu-space-6) var(--yu-space-5) var(--yu-space-16);
+  }
+
+  .title {
+    font-size: var(--yu-text-title-3-size);
+    letter-spacing: var(--yu-text-title-3-tracking);
+    line-height: var(--yu-text-title-3-leading);
+  }
+
+  .header {
+    align-items: flex-start;
+    gap: var(--yu-space-4);
+  }
+}
+
+
+/* 状态徽标:强调色在浅蓝底上需用文字档强调色 */
+.status_published,
+.status {
+  color: var(--yu-color-accent-text);
+}

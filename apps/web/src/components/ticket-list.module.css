@@ -1,0 +1,22 @@
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--yu-space-3); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.item {
+  background: var(--yu-color-bg-elevated);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  padding: var(--yu-space-5);
+}
+.itemOff { background: var(--yu-color-bg-section); border-style: dashed; }
+.itemOff .name, .itemOff .price { color: var(--yu-color-text-secondary); }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--yu-space-3); }
+.name { font-size: var(--yu-text-callout-size); font-weight: 600; }
+.price { font-size: var(--yu-text-headline-size); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.desc { margin: var(--yu-space-2) 0 0; font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
+.status { margin: var(--yu-space-3) 0 0; }
+.badgeOk, .badgeWarn, .badgeDanger, .badgeMuted {
+  display: inline-block; padding: 2px 10px; border-radius: var(--yu-radius-pill);
+  font-size: var(--yu-text-caption-size); font-weight: 500;
+}
+.badgeOk { background: color-mix(in srgb, var(--yu-color-success-fill) 12%, transparent); color: var(--yu-color-success-text); }
+.badgeWarn { background: color-mix(in srgb, var(--yu-color-warning-fill) 14%, transparent); color: var(--yu-color-warning-text); }
+.badgeDanger { background: color-mix(in srgb, var(--yu-color-danger-fill) 12%, transparent); color: var(--yu-color-danger-text); }
+.badgeMuted { background: color-mix(in srgb, var(--yu-color-text-secondary) 14%, transparent); color: var(--yu-color-text-secondary); }

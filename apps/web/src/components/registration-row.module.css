@@ -1,0 +1,22 @@
+.rowPending { opacity: 0.5; }
+.name { display: block; font-weight: 500; font-size: var(--yu-text-callout-size); }
+.email { display: block; color: var(--yu-color-text-secondary); font-size: var(--yu-text-caption-size); }
+.muted { color: var(--yu-color-text-secondary); }
+.code { font-family: var(--yu-font-family-mono); letter-spacing: 0.06em; }
+.error { display: block; color: var(--yu-color-danger-text); font-size: var(--yu-text-caption-size); margin-top: 2px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: var(--yu-radius-pill); font-size: var(--yu-text-caption-size); font-weight: 500; white-space: nowrap; background: color-mix(in srgb, var(--yu-color-text-secondary) 14%, transparent); }
+.badge_confirmed, .badge_checked_in { background: color-mix(in srgb, var(--yu-color-success-fill) 18%, transparent); color: var(--yu-color-success-text); }
+.badge_pending_review, .badge_waitlisted, .badge_awaiting_payment { background: color-mix(in srgb, var(--yu-color-warning-fill) 20%, transparent); color: var(--yu-color-warning-text); }
+.badge_rejected, .badge_cancelled, .badge_expired { background: color-mix(in srgb, var(--yu-color-danger-fill) 16%, transparent); color: var(--yu-color-danger-text); }
+.actions { display: flex; gap: var(--yu-space-2); flex-wrap: wrap; }
+.action {
+  font: inherit; font-size: var(--yu-text-caption-size); font-weight: 500;
+  padding: 4px 12px; border-radius: var(--yu-radius-pill);
+  border: 1px solid var(--yu-color-hairline); background: transparent;
+  color: var(--yu-color-accent-text); cursor: pointer; white-space: nowrap;
+}
+.action:hover:not(:disabled) { border-color: var(--yu-color-accent-text); background: color-mix(in srgb, var(--yu-color-accent) 8%, transparent); }
+.actionDanger { color: var(--yu-color-danger-text); }
+.actionDanger:hover:not(:disabled) { border-color: var(--yu-color-danger-fill); background: color-mix(in srgb, var(--yu-color-danger-fill) 8%, transparent); }
+.action:disabled { opacity: 0.5; cursor: progress; }
+.terminal { font-size: var(--yu-text-caption-size); color: var(--yu-color-text-secondary); }

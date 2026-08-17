@@ -1,0 +1,29 @@
+.wrap {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  padding: 2px;
+  gap: 0;
+}
+.btn {
+  font: inherit;
+  font-size: var(--yu-text-caption-size);
+  font-weight: 500;
+  line-height: 1;
+  padding: 5px 11px;
+  border: 0;
+  border-radius: var(--yu-radius-pill);
+  background: transparent;
+  color: var(--yu-color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms ease, color 150ms ease;
+}
+.btn:hover { color: var(--yu-color-text-primary); }
+.btn:focus-visible { outline: 3px solid var(--yu-color-focus-ring); outline-offset: 2px; }
+.active {
+  background: var(--yu-color-accent);
+  color: #fff;
+}
+.active:hover { color: #fff; }
+.sep { width: 0; }

@@ -1,0 +1,630 @@
+/* 多轨时间网格 + 移动端时间轴。
+   颜色 / 字号 / 间距一律取 --yu- token;--sched-* 仅是本组件的几何量。 */
+
+.root {
+  --sched-slot-h: 13px;      /* 5 分钟一格 */
+  --sched-gutter: 56px;      /* 时间刻度列 */
+  --sched-tabs-h: 64px;      /* 粘性 tab 条高度,供会场表头 sticky 偏移 */
+  --sched-col-gap: var(--yu-space-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- 时区双标注 */
+
+.tzBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  margin-bottom: var(--yu-space-4);
+  background: color-mix(in srgb, var(--yu-color-accent) 7%, var(--yu-color-bg-section));
+  border: 1px solid color-mix(in srgb, var(--yu-color-accent) 22%, transparent);
+  border-radius: var(--yu-radius-card);
+}
+
+.tzText {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2);
+  font-size: var(--yu-text-footnote-size);
+  letter-spacing: var(--yu-text-footnote-tracking);
+  line-height: var(--yu-text-footnote-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.tzLabel {
+  color: var(--yu-color-text-secondary);
+}
+
+.tzZone {
+  font-family: var(--yu-font-family-mono);
+  font-size: var(--yu-text-caption-size);
+  color: var(--yu-color-text-primary);
+  padding: 1px var(--yu-space-2);
+  border-radius: var(--yu-radius-pill);
+  background: color-mix(in srgb, var(--yu-color-accent) 14%, transparent);
+}
+
+.tzNote {
+  color: var(--yu-color-text-secondary);
+}
+
+.tzToggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--yu-color-bg-page);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+}
+
+.tzOption {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--yu-color-text-secondary);
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  padding: var(--yu-space-1) var(--yu-space-3);
+  border-radius: var(--yu-radius-pill);
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.tzOption:hover {
+  color: var(--yu-color-text-primary);
+}
+
+.tzOption[aria-pressed='true'] {
+  background: var(--yu-color-accent);
+  color: var(--yu-color-bg-page);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ 日期 tab */
+
+.tabsBar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: var(--sched-tabs-h);
+  display: flex;
+  align-items: center;
+  background: var(--yu-color-bg-page);
+  border-bottom: 1px solid var(--yu-color-hairline);
+  margin-inline: calc(var(--yu-space-6) * -1);
+  padding-inline: var(--yu-space-6);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--yu-space-1);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  width: 100%;
+}
+
+.tab {
+  appearance: none;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--yu-radius-control);
+  padding: var(--yu-space-1) var(--yu-space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--yu-space-2);
+  text-align: left;
+  white-space: nowrap;
+  color: var(--yu-color-text-secondary);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.tabIndex {
+  flex: 1 0 100%;
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+.tabDate {
+  font-size: var(--yu-text-headline-size);
+  font-weight: var(--yu-text-headline-weight);
+  letter-spacing: var(--yu-text-headline-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabWeekday {
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+}
+
+.tab:hover {
+  background: var(--yu-color-bg-section);
+  color: var(--yu-color-text-primary);
+}
+
+.tab[aria-selected='true'] {
+  background: color-mix(in srgb, var(--yu-color-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--yu-color-accent) 35%, transparent);
+  color: var(--yu-color-accent);
+}
+
+.tab[aria-selected='true'] .tabIndex,
+.tab[aria-selected='true'] .tabWeekday {
+  color: var(--yu-color-accent);
+}
+
+/* -------------------------------------------------------------------- 面板头 */
+
+.panel {
+  padding-top: var(--yu-space-6);
+}
+
+.panel:focus-visible {
+  outline-offset: -3px;
+}
+
+.dayTitle {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+  font-size: var(--yu-text-title-3-size);
+  font-weight: var(--yu-text-title-3-weight);
+  letter-spacing: var(--yu-text-title-3-tracking);
+  line-height: var(--yu-text-title-3-leading);
+  margin-bottom: var(--yu-space-4);
+}
+
+.dayCount,
+.dayRange {
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 400;
+  letter-spacing: var(--yu-text-footnote-tracking);
+  color: var(--yu-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- 会场表头行 */
+
+.roomHead {
+  position: sticky;
+  top: var(--sched-tabs-h);
+  z-index: 2;
+  display: grid;
+  column-gap: var(--sched-col-gap);
+  align-items: end;
+  padding: var(--yu-space-3) 0 var(--yu-space-2);
+  background: var(--yu-color-bg-page);
+  border-bottom: 1px solid var(--yu-color-hairline);
+}
+
+.roomHeadGutter {
+  display: block;
+}
+
+.roomHeadCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding-left: var(--yu-space-2);
+}
+
+.roomHeadName {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-callout-tracking);
+  color: var(--yu-color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roomHeadLoc {
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ 时间网格 */
+
+.gridView {
+  display: block;
+}
+
+.grid {
+  display: grid;
+  column-gap: var(--sched-col-gap);
+  grid-auto-rows: var(--sched-slot-h);
+  margin-top: var(--yu-space-2);
+  list-style: none;
+  padding: 0;
+}
+
+.gridSpacer {
+  z-index: 0;
+}
+
+.colLine {
+  z-index: 0;
+  border-left: 1px solid var(--yu-color-hairline);
+}
+
+.tick {
+  z-index: 0;
+  border-top: 1px solid var(--yu-color-hairline);
+  pointer-events: none;
+}
+
+.tickLabel {
+  display: block;
+  width: var(--sched-gutter);
+  padding-right: var(--yu-space-2);
+  text-align: right;
+  transform: translateY(-0.65em);
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  font-variant-numeric: tabular-nums;
+  color: var(--yu-color-text-secondary);
+}
+
+/* --------------------------------------------------------------------- 卡片 */
+
+.card {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding: var(--yu-space-1) var(--yu-space-2);
+  margin-bottom: 2px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-elevated);
+}
+
+.cardTime {
+  margin: 0;
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--yu-color-text-secondary);
+  white-space: nowrap;
+}
+
+.timeSep {
+  margin: 0 1px;
+}
+
+.dayShift {
+  margin-left: var(--yu-space-1);
+  padding: 0 4px;
+  border-radius: var(--yu-radius-pill);
+  background: color-mix(in srgb, var(--yu-color-warning-fill) 22%, transparent);
+  color: var(--yu-color-warning-text);
+  font-size: var(--yu-text-caption-size);
+}
+
+.cardBody {
+  min-width: 0;
+}
+
+.cardTitle {
+  font-size: var(--yu-text-caption-size);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--yu-color-text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+
+.speakers {
+  margin: 2px 0 0;
+  min-width: 0;
+}
+
+.speaker {
+  display: block;
+  min-width: 0;
+}
+
+.speakerName {
+  display: block;
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.25;
+  color: var(--yu-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.speakerAff {
+  display: block;
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.25;
+  color: var(--yu-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 短卡片(< 45 分钟)放不下机构名,收起以免撑破卡片 */
+.cardDense .speakerAff {
+  display: none;
+}
+
+.cardDense .cardTitle {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.kicker {
+  display: inline-block;
+  margin-bottom: 2px;
+  padding: 0 var(--yu-space-2);
+  border: 1px solid color-mix(in srgb, var(--yu-color-text-secondary) 40%, transparent);
+  border-radius: var(--yu-radius-pill);
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--yu-color-text-secondary);
+}
+
+/* 跨会场项(午餐 / 远足 / 晚宴):横跨整行,横向排布避免留出巨大空白 */
+.cardWide {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--yu-space-4);
+  padding-inline: var(--yu-space-4);
+}
+
+.cardWide .cardBody {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--yu-space-2) var(--yu-space-3);
+}
+
+.cardWide .cardTitle {
+  font-size: var(--yu-text-callout-size);
+  letter-spacing: var(--yu-text-callout-tracking);
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.cardWide .kicker {
+  margin-bottom: 0;
+  order: 2;
+}
+
+.cardWide .speakers {
+  margin: 0;
+}
+
+/* ------------------------------------------------------- kind 视觉分档(共用) */
+
+.kind_talk {
+  background: var(--yu-color-bg-elevated);
+  border-color: var(--yu-color-hairline);
+}
+
+.kind_keynote {
+  background: color-mix(in srgb, var(--yu-color-accent) 12%, var(--yu-color-bg-elevated));
+  border-color: color-mix(in srgb, var(--yu-color-accent) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--yu-color-accent);
+}
+
+.kind_keynote .cardTitle,
+.kind_keynote .tlTitle {
+  color: var(--yu-color-text-primary);
+}
+
+.kind_keynote .kicker {
+  color: var(--yu-color-accent);
+  border-color: color-mix(in srgb, var(--yu-color-accent) 45%, transparent);
+}
+
+.kind_break {
+  background: var(--yu-color-bg-section);
+  border-style: dashed;
+  border-color: var(--yu-color-hairline);
+}
+
+.kind_break .cardTitle,
+.kind_break .tlTitle {
+  color: var(--yu-color-text-secondary);
+  font-weight: 400;
+}
+
+.kind_poster,
+.kind_social {
+  background: color-mix(in srgb, var(--yu-color-text-secondary) 12%, var(--yu-color-bg-elevated));
+  border-color: color-mix(in srgb, var(--yu-color-text-secondary) 38%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--yu-color-text-secondary) 55%, transparent);
+}
+
+.kind_poster .cardTitle,
+.kind_social .cardTitle,
+.kind_poster .tlTitle,
+.kind_social .tlTitle {
+  font-weight: 500;
+  color: var(--yu-color-text-primary);
+}
+
+/* ------------------------------------------------------------ 移动端时间轴 */
+
+.timeline {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: var(--yu-space-2);
+}
+
+.tlItem {
+  display: flex;
+  gap: var(--yu-space-4);
+  padding: var(--yu-space-3) var(--yu-space-4);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-elevated);
+}
+
+.tlTime {
+  flex: 0 0 auto;
+  margin: 0;
+  min-width: 3.6em;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--yu-text-footnote-size);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  color: var(--yu-color-text-primary);
+}
+
+.tlEnd {
+  color: var(--yu-color-text-secondary);
+}
+
+.tlBody {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.tlTitle {
+  font-size: var(--yu-text-callout-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-callout-tracking);
+  line-height: var(--yu-text-callout-leading);
+  color: var(--yu-color-text-primary);
+  text-wrap: pretty;
+}
+
+.tlItem .speakers {
+  margin-top: var(--yu-space-1);
+}
+
+.tlItem .speaker {
+  display: inline;
+}
+
+.tlItem .speakerName,
+.tlItem .speakerAff {
+  display: inline;
+  font-size: var(--yu-text-footnote-size);
+  line-height: var(--yu-text-footnote-leading);
+  white-space: normal;
+}
+
+.tlItem .speakerAff::before {
+  content: ' · ';
+}
+
+.tlRoom {
+  margin: var(--yu-space-1) 0 0;
+  font-size: var(--yu-text-caption-size);
+  line-height: var(--yu-text-caption-leading);
+  color: var(--yu-color-text-secondary);
+}
+
+/* ---------------------------------------------------------------- 断点降级 */
+
+@media (max-width: 1100px) {
+  .root {
+    --sched-slot-h: 12px;
+    --sched-gutter: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .gridView {
+    display: none;
+  }
+
+  .timeline {
+    display: grid;
+  }
+
+  .tabsBar {
+    margin-inline: calc(var(--yu-space-5) * -1);
+    padding-inline: var(--yu-space-5);
+  }
+
+  .tzBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dayTitle {
+    font-size: var(--yu-text-headline-size);
+    letter-spacing: var(--yu-text-headline-tracking);
+    line-height: var(--yu-text-headline-leading);
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   有色卡片底上的 12px 小字:次要色在浅蓝/浅灰底上对比不足 4.5:1(WCAG 1.4.3),
+   统一提到正文色;强调色徽标改用 accent-text。
+   -------------------------------------------------------------------------- */
+.kind_keynote .cardTime,
+.kind_keynote .speakerName,
+.kind_keynote .speakerAff,
+.kind_break .cardTime,
+.kind_break .speakerName,
+.kind_break .speakerAff,
+.kind_social .cardTime,
+.kind_social .kicker,
+.kind_poster .cardTime {
+  color: var(--yu-color-text-primary);
+}
+
+.kind_keynote .kicker {
+  color: var(--yu-color-accent-text);
+}
+
+
+/* 时区条与日期 tab 落在浅色调底上,次要色/强调色在 12–14px 下不足 4.5:1,统一提色 */
+.tzLabel,
+.tzNote {
+  color: var(--yu-color-text-primary);
+}
+
+.tab[aria-selected='true'] .tabIndex,
+.tab[aria-selected='true'] .tabDate,
+.tab[aria-selected='true'] .tabWeekday,
+.tabIndex,
+.tabDate,
+.tabWeekday {
+  color: var(--yu-color-accent-text);
+}
