@@ -1,0 +1,12 @@
+.page { max-width: 1060px; margin: 0 auto; padding: var(--yu-space-10) var(--yu-space-6) var(--yu-space-24); }
+.breadcrumb { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); margin-bottom: var(--yu-space-6); }
+.breadcrumb a { color: var(--yu-color-accent-text); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.title { font-size: var(--yu-text-title-1-size); font-weight: var(--yu-text-title-1-weight); letter-spacing: var(--yu-text-title-1-tracking); line-height: var(--yu-text-title-1-leading); }
+.lede { margin: var(--yu-space-3) 0 var(--yu-space-8); color: var(--yu-color-text-secondary); font-size: var(--yu-text-body-large-size); line-height: var(--yu-text-body-large-leading); max-width: 46em; text-wrap: pretty; }
+.detail { margin-top: var(--yu-space-16); display: grid; gap: var(--yu-space-10); max-width: 46em; }
+.entry { scroll-margin-top: 64px; }
+.entryName { font-size: var(--yu-text-title-3-size); font-weight: var(--yu-text-title-3-weight); letter-spacing: var(--yu-text-title-3-tracking); }
+.entryTalk { margin-top: var(--yu-space-2); font-size: var(--yu-text-headline-size); font-weight: 600; letter-spacing: var(--yu-text-headline-tracking); color: var(--yu-color-accent-text); text-wrap: pretty; }
+.entryBio { margin-top: var(--yu-space-3); line-height: 1.7; text-wrap: pretty; }
+@media (max-width: 640px) { .page { padding: var(--yu-space-6) var(--yu-space-5) var(--yu-space-16); } .title { font-size: 32px; } }

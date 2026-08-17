@@ -2,7 +2,7 @@
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 import {
   db as defaultDb, events, organizations, registrationForms, tickets,
-  rooms, sessions, eventPages, submissions, type Db,
+  rooms, sessions, eventPages, eventPeople, submissions, type Db,
 } from '@yumeet/db';
 
 /** live/ended 是派生展示态,不入库(ch05 §5.4) */
@@ -180,4 +180,39 @@ export async function getAbstract(eventId: string, id: string, db: Db = defaultD
     ))
     .limit(1);
   return row ?? null;
+}
+
+/* ---------- 会议人物:特邀讲者与委员会(注册转化的关键内容) ---------- */
+
+export async function listSpeakers(eventId: string, db: Db = defaultDb) {
+  return db.select().from(eventPeople)
+    .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'speaker')))
+    .orderBy(asc(eventPeople.position));
+}
+
+export async function listCommittee(
+  eventId: string, groupKey?: string, db: Db = defaultDb,
+) {
+  const conds = [eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'committee')];
+  if (groupKey) conds.push(eq(eventPeople.groupKey, groupKey));
+  return db.select().from(eventPeople)
+    .where(and(...conds))
+    .orderBy(asc(eventPeople.position));
+}
+
+/** 首页用:少量讲者摘要 + 总数,用于「谁会来」这一决定性信息 */
+export async function speakerHighlights(
+  eventId: string, limit = 8, db: Db = defaultDb,
+) {
+  const rows = await db.select().from(eventPeople)
+    .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'speaker')))
+    .orderBy(asc(eventPeople.position))
+    .limit(limit);
+  const [{ total = 0 } = { total: 0 }] = await db
+    .select({ total: count() }).from(eventPeople)
+    .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'speaker')));
+  const [{ committee = 0 } = { committee: 0 }] = await db
+    .select({ committee: count() }).from(eventPeople)
+    .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'committee')));
+  return { rows, total, committee };
 }

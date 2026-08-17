@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getEventBySlug, getEventForms, listNavPages } from '@yumeet/core';
+import { getEventBySlug, getEventForms, listNavPages, speakerHighlights } from '@yumeet/core';
 import { SiteNav } from '@/components/site-nav';
 import { ThemeStyle } from '@/components/theme-style';
 import { resolveLocale } from '@/lib/locale-server';
@@ -27,17 +27,21 @@ export default async function EventLayout({ children, params }: Props) {
   const locale = await resolveLocale();
   const tt = translator(locale);
 
-  const [forms, navPages] = await Promise.all([
+  const [forms, navPages, people] = await Promise.all([
     getEventForms(found.event.id),
     listNavPages(found.event.id),
+    speakerHighlights(found.event.id, 1),
   ]);
   const modules = found.event.modules ?? {};
 
   const items: { href: string; label: string }[] = [];
+  // 讲者阵容是注册转化的关键,放在导航首位
+  if (people.total > 0) items.push({ href: `${base}/speakers`, label: tt('speakers') });
   if (modules.schedule) items.push({ href: `${base}/schedule`, label: tt('schedule') });
   if (modules.cfp) items.push({ href: `${base}/cfp`, label: tt('cfp') });
   // 归档会议以摘要检索为主入口(ch05 §5.4:归档是一等公民)
   if (modules.archive) items.push({ href: `${base}/abstracts`, label: tt('abstracts') });
+  if (people.committee > 0) items.push({ href: `${base}/committees`, label: tt('committees') });
 
   // 自定义页面按分组进导航,超出 3 组的收进「更多」下拉
   const groups = navPages.reduce<Record<string, { href: string; label: string }[]>>(

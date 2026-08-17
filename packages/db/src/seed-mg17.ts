@@ -20,7 +20,7 @@ import { db } from './client';
 import {
   organizations, users, organizationMembers, eventMembers,
   events, eventPages, registrationForms, tickets,
-  rooms, sessions, submissions,
+  rooms, sessions, submissions, eventPeople,
 } from './schema/index';
 
 const DATA = process.env.MG17_DATA ?? '/home/yumeet.ywang.science/mg17';
@@ -42,6 +42,12 @@ interface RawAbstract {
 }
 interface RawSession { title: string; code: string | null; indicoId: number | null }
 interface RawPerson { name: string; affiliation: string | null; roles: string | null }
+interface StructuredPerson {
+  kind: string; groupKey?: string; name: string;
+  affiliation?: string | null; country?: string | null;
+  talkTitle?: string | null; bio?: string | null;
+  photoUrl?: string | null; role?: string | null; position: number;
+}
 
 const read = <T>(f: string): T =>
   JSON.parse(readFileSync(join(DATA, f), 'utf8')) as T;
@@ -127,6 +133,7 @@ async function main() {
     await db.execute(sql`DELETE FROM sessions WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM rooms WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM event_pages WHERE event_id = ${id}`);
+    await db.execute(sql`DELETE FROM event_people WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM registrations WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM registration_form_revisions WHERE form_id IN
       (SELECT id FROM registration_forms WHERE event_id = ${id})`);
@@ -218,6 +225,31 @@ async function main() {
       sourceUrl: p.source,
     };
   }));
+
+  /* ---------- 人物:特邀讲者与各级委员会 ---------- */
+  console.log('导入讲者与委员会…');
+  const structured = read<StructuredPerson[]>('mg17-people-structured.json');
+  // 讲者照片沿用页面里已下载的本地副本
+  const photoMap = new Map<string, string>();
+  for (const pg of pages) {
+    pg.images.forEach((url, i) => {
+      const local = pg.localImages?.[i];
+      if (local) photoMap.set(url, `/mg17/${local}`);
+    });
+  }
+  await db.insert(eventPeople).values(structured.map((p) => ({
+    eventId: event!.id,
+    kind: p.kind,
+    groupKey: p.groupKey ?? null,
+    name: p.name,
+    affiliation: p.affiliation ?? null,
+    country: p.country ?? null,
+    talkTitle: p.talkTitle ?? null,
+    bio: p.bio ?? null,
+    photoUrl: p.photoUrl ? (photoMap.get(p.photoUrl) ?? p.photoUrl) : null,
+    role: p.role ?? null,
+    position: p.position,
+  })));
 
   /* ---------- 会场(MG17 的平行分会分布在 Aurum 各厅) ---------- */
   const roomRows = await db.insert(rooms).values([
@@ -322,6 +354,8 @@ async function main() {
   console.log(`  摘要    ${abstracts.length}`);
   console.log(`  日程    ${rows.length} 场(6 天 × ${roomRows.length} 会场)`);
   console.log(`  分会    ${codes.length} 个平行分会 + ${plenary.length} 场全体报告`);
+  console.log(`  人物    ${structured.filter((p) => p.kind === 'speaker').length} 位特邀讲者 + `
+    + `${structured.filter((p) => p.kind === 'committee').length} 位委员`);
   console.log('  注:参会者与主席的邮箱未导入(公开站点从未展示,见文件头说明)');
   process.exit(0);
 }

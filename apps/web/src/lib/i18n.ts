@@ -313,6 +313,23 @@ const T = {
   authors: { zh: '作者', en: 'Authors' },
   backToAbstracts: { zh: '返回摘要列表', en: 'Back to abstracts' },
 
+  // 讲者与委员会(注册转化的关键内容)
+  speakers: { zh: '特邀讲者', en: 'Invited speakers' },
+  speakersLede: {
+    zh: '{n} 位特邀讲者将带来全体大会报告,涵盖引力波、黑洞、宇宙学与多信使天文学。',
+    en: '{n} invited speakers will give plenary talks spanning gravitational waves, black holes, cosmology and multi-messenger astronomy.',
+  },
+  seeAllSpeakers: { zh: '查看全部 {n} 位讲者', en: 'See all {n} speakers' },
+  committees: { zh: '组织委员会', en: 'Committees' },
+  committeesLede: {
+    zh: '本次会议由 {n} 位来自世界各地的学者组成的委员会筹办。',
+    en: 'The meeting is organised by committees of {n} scholars from around the world.',
+  },
+  committeeIcc: { zh: '国际协调委员会', en: 'International Coordinating Committee' },
+  committeeIoc: { zh: '国际组织委员会', en: 'International Organizing Committee' },
+  committeeLoc: { zh: '本地组织委员会', en: 'Local Organizing Committee' },
+  peopleCount: { zh: '{n} 人', en: '{n} members' },
+
   // 语言切换
   language: { zh: '语言', en: 'Language' },
   switchToEn: { zh: 'English', en: 'English' },

@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   getEventBySlug, getEventTickets, getEventForms, getEventSchedule,
-  displayStatus, encodeId, eventJsonLd, groupByDay,
+  displayStatus, encodeId, eventJsonLd, groupByDay, speakerHighlights,
 } from '@yumeet/core';
 import { EventHero } from '@/components/event-hero';
+import { SpeakerGrid } from '@/components/speaker-grid';
 import { resolveLocale } from '@/lib/locale-server';
 import { translator, eventContent } from '@/lib/i18n';
 import { ScheduleGlance } from '@/components/schedule-glance';
@@ -44,10 +45,11 @@ export default async function EventPage({ params, searchParams }: Props) {
   if (!found || found.event.status === 'draft') notFound();
 
   const { event, org } = found;
-  const [tickets, forms, schedule] = await Promise.all([
+  const [tickets, forms, schedule, speakers] = await Promise.all([
     getEventTickets(event.id),
     getEventForms(event.id),
     getEventSchedule(event.id),
+    speakerHighlights(event.id, 8),
   ]);
 
   const status = displayStatus(event);
@@ -87,6 +89,36 @@ export default async function EventPage({ params, searchParams }: Props) {
           <section className={styles.section} aria-labelledby="about">
             <h2 id="about" className={styles.sectionTitle}>{tt('about')}</h2>
             <Markdown source={content.description ?? ''} />
+          </section>
+        )}
+
+        {speakers.rows.length > 0 && (
+          <section className={styles.section} aria-labelledby="speakers">
+            <div className={styles.sectionHead}>
+              <h2 id="speakers" className={styles.sectionTitle}>{tt('speakers')}</h2>
+              <Link className={styles.moreLink} href={`/${orgSlug}/${eventSlug}/speakers`}>
+                {tt('seeAllSpeakers', { n: speakers.total })}
+              </Link>
+            </div>
+            <SpeakerGrid
+              locale={locale}
+              speakers={speakers.rows.map((s) => ({
+                id: s.id, name: s.name, affiliation: s.affiliation,
+                talkTitle: s.talkTitle, photoUrl: s.photoUrl, bio: s.bio,
+              }))}
+            />
+          </section>
+        )}
+
+        {speakers.committee > 0 && (
+          <section className={styles.section} aria-labelledby="committees">
+            <div className={styles.sectionHead}>
+              <h2 id="committees" className={styles.sectionTitle}>{tt('committees')}</h2>
+              <Link className={styles.moreLink} href={`/${orgSlug}/${eventSlug}/committees`}>
+                {tt('peopleCount', { n: speakers.committee })}
+              </Link>
+            </div>
+            <p className={styles.calendarHint}>{tt('committeesLede', { n: speakers.committee })}</p>
           </section>
         )}
 

@@ -105,3 +105,32 @@ export const eventPages = pgTable('event_pages', {
     .where(sql`${t.deletedAt} IS NULL`),
   index('event_pages_nav_idx').on(t.eventId, t.position),
 ]);
+
+/**
+ * 会议人物:特邀讲者与各级委员会成员(ch05 §5.4 归档 + 会议站核心内容)
+ *
+ * 大会讲者与委员会名单往往是参会者决定是否注册的首要依据,
+ * 因此不能只作为一段 Markdown 正文,必须结构化以便卡片化展示、检索与复用。
+ */
+export const eventPeople = pgTable('event_people', {
+  id: uuid('id').primaryKey().$defaultFn(uuidv7),
+  eventId: uuid('event_id').notNull().references(() => events.id),
+  /** speaker(特邀讲者) | committee(委员会成员) | chair(分会主席) */
+  kind: text('kind').notNull(),
+  /** 委员会分组:icc / ioc / loc;讲者可留空 */
+  groupKey: text('group_key'),
+  name: text('name').notNull(),
+  affiliation: text('affiliation'),
+  country: text('country'),
+  /** 讲者的报告题目 */
+  talkTitle: text('talk_title'),
+  /** 报告摘要或人物简介 */
+  bio: text('bio'),
+  photoUrl: text('photo_url'),
+  /** co-chair / chairperson 等标注 */
+  role: text('role'),
+  position: integer('position').notNull().default(0),
+  createdAt: ts('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('event_people_kind_idx').on(t.eventId, t.kind, t.position),
+]);
