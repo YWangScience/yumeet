@@ -196,6 +196,9 @@ const PAGE_TITLE_ZH: Record<string, string> = {
   'proceedings': '会议论文集',
 };
 
+/** 「关于会议」各页的中文正文(见 mg17/page_zh.py) */
+const PAGE_BODY_ZH: Record<string, string> = read<Record<string, string>>('mg17-pages-zh.json');
+
 const DESCRIPTION_EN = `The Seventeenth Marcel Grossmann Meeting (MG17) was held at **Aurum**, the 'Gabriele d'Annunzio' University and ICRANet, in **Pescara, Italy**, from 7 to 12 July 2024.
 
 Since 1975, the Marcel Grossmann Meetings on Recent Developments in Theoretical and Experimental General Relativity, Gravitation, and Relativistic Field Theories have been organized in order to provide opportunities for discussing recent advances in gravitation, general relativity and relativistic field theories, emphasizing mathematical foundations, physical predictions and experimental tests. The objective of these meetings is to elicit exchange among scientists that may deepen our understanding of spacetime structures as well as to review the status of ongoing experiments aimed at testing Einstein's theory of gravitation either from the ground or from space.
@@ -327,6 +330,7 @@ async function main() {
   await db.insert(eventPages).values(pages.map((p) => {
     const nav = NAV_GROUP[p.slug] ?? { group: 'about', pos: 90 };
     const zh = PAGE_TITLE_ZH[p.slug];
+    const zhBody = PAGE_BODY_ZH[p.slug];
     // 「Confirmed plenary speakers」与 /speakers 是同一批人,
     // 但这份是 Indico 的原始导出:姓名、报告题目、摘要连成一段斜体,
     // 一万六千像素长。结构化的那份已经在讲者页,这份不进导航(仍可直达,
@@ -337,8 +341,17 @@ async function main() {
       slug: p.slug,
       title: p.title,
       body: rewriteImages(p),
-      // 只覆盖标题,正文沿用英文原文(历史记录不改写)
-      contentI18n: zh ? { zh: { title: zh } } : null,
+      /*
+       * 中文版覆盖标题与正文。
+       *
+       * 「关于会议」下的各页是给参会者读的实用信息(怎么去、住哪儿、怎么连网),
+       * 中文版挂着英文原文等于没翻译。人名、地名、机构名与专业术语保持原文 ——
+       * 把 Pescara、Aurum、eduroam 译出来,读者反而对不上门牌和网络名。
+       * 没有中文正文的页面继续沿用英文原文,不做机器翻译。
+       */
+      contentI18n: (zh || zhBody)
+        ? { zh: { ...(zh ? { title: zh } : {}), ...(zhBody ? { body: zhBody } : {}) } }
+        : null,
       position: nav.pos,
       group: nav.group,
       showInNav: !hideFromNav,
@@ -387,11 +400,24 @@ async function main() {
   /* ---------- 会场(MG17 的平行分会分布在 Aurum 各厅) ---------- */
   const roomRows = await db.insert(rooms).values([
     { eventId: event!.id, name: 'Sala Auditorium (Plenary)', capacity: 500, location: 'Aurum, Pescara', position: 0 },
+    /*
+     * 会场数按报告量倒推。
+     *
+     * 539 篇平行报告,只能排在下午(上午是全体大会)。
+     * 下午 14:30–19:00 约四个半小时,24 分钟一场,每厅每天约 11 场;
+     * 六天合计每厅约 66 场 —— 539 ÷ 66 ≈ 8,再留出分会之间的换场余量,
+     * 取 10 个平行会场。这也接近真实 MG17 的规模(同时开十来个分会厅)。
+     */
     { eventId: event!.id, name: 'Sala 1', capacity: 120, location: 'Aurum, Pescara', position: 1 },
     { eventId: event!.id, name: 'Sala 2', capacity: 120, location: 'Aurum, Pescara', position: 2 },
     { eventId: event!.id, name: 'Sala 3', capacity: 100, location: 'Aurum, Pescara', position: 3 },
     { eventId: event!.id, name: 'Sala 4', capacity: 100, location: 'Aurum, Pescara', position: 4 },
-    { eventId: event!.id, name: 'ICRANet Seminar Room', capacity: 80, location: 'ICRANet, Pescara', position: 5 },
+    { eventId: event!.id, name: 'Sala 5', capacity: 100, location: 'Aurum, Pescara', position: 5 },
+    { eventId: event!.id, name: 'Sala 6', capacity: 100, location: 'Aurum, Pescara', position: 6 },
+    { eventId: event!.id, name: 'Sala 7', capacity: 80, location: 'Aurum, Pescara', position: 7 },
+    { eventId: event!.id, name: 'Sala 8', capacity: 80, location: 'Aurum, Pescara', position: 8 },
+    { eventId: event!.id, name: 'Sala 9', capacity: 80, location: 'Aurum, Pescara', position: 9 },
+    { eventId: event!.id, name: 'ICRANet Seminar Room', capacity: 80, location: 'ICRANet, Pescara', position: 10 },
   ]).returning();
   const [hall, ...parallelRooms] = roomRows;
 
@@ -484,30 +510,91 @@ async function main() {
     });
   }
 
-  // 平行分会:按 code 分配到会场与时段
+  /*
+   * 平行分会排期。
+   *
+   * 分会规模差得很远:少的两三篇,多的二十几篇。原来按「每天两个固定时段」
+   * 平均分,再把每个分会截到六篇 —— 于是既丢了两百多篇报告,
+   * 留下的也全挤在 14:30 前后。
+   *
+   * 改成按篇数占用时长:一个分会从它的起始时刻开始,每 24 分钟一场往后排,
+   * 排到几点就是几点。分会之间在同一会场内首尾相接,不重叠。
+   */
   const codes = [...byCode.keys()].filter((c) => c !== 'PLENARY' && c !== '_none').sort();
-  codes.forEach((code, idx) => {
-    const day = days[Math.floor(idx / 12) % days.length]!;
-    const room = parallelRooms[idx % parallelRooms.length]!;
-    const slot = Math.floor((idx % 12) / parallelRooms.length); // 每天两个下午时段
-    const talks = (byCode.get(code) ?? []).slice(0, 6);
-    talks.forEach((a, k) => {
-      const startH = 14.5 + slot * 2.5 + k * 0.4;
-      const h = Math.floor(startH);
-      const m = Math.round((startH - h) * 60);
-      rows.push({
-        eventId: event!.id, roomId: room.id, kind: 'talk',
-        submissionId: submissionByContribution.get(a.contributionId) ?? null,
-        title: a.title,
-        startsAt: rome(day, h, m), endsAt: rome(day, h, m + 22),
-        speakers: a.authors
-          .filter((au) => looksLikeName(tidyName(au.name)))
-          .slice(0, 2)
-          .map((au) => ({
-            name: tidyName(au.name), affiliation: au.affiliation ?? undefined,
-          })),
+
+  /*
+   * 分会按「哪个坑最早空出来」来放,而不是按下标平均分。
+   *
+   * 六天 × 五个平行会场共三十个坑,而分会规模从两三篇到二十几篇不等。
+   * 平均分的结果是有的坑三点就结束、有的排到后半夜。
+   * 每次挑当前结束最早的那个坑,长短分会自然错开,整体收在下午到傍晚。
+   */
+  /*
+   * 逐场排期,而不是「一个分会占一个坑连排到底」。
+   *
+   * 分会规模差得很远:最大的二十几篇,连排下来要十个小时,一个下午装不下,
+   * 于是溢到夜里。真实会议的做法是同一个分会跨天续开(BH1 周一下午一节、
+   * 周三下午再一节),所以这里也按场次逐个投放:每次挑当前最早空闲的坑,
+   * 坑排满当天下午就换下一个坑。同一分会尽量落在同一会场,
+   * 但不为此把时间拖到深夜。
+   */
+  const SLOT_START = 14.5;   // 下午分会自 14:30 起
+  const SLOT_END = 19.0;     // 到 19:00 收尾
+  const TALK = 0.4;          // 24 分钟一场
+
+  const slots = days.flatMap((day) => parallelRooms.map((room) => (
+    { day, room, free: SLOT_START }
+  )));
+
+  codes.forEach((code) => {
+    const talks = byCode.get(code) ?? [];
+    if (talks.length === 0) return;
+
+    /*
+     * 一个分会整段放进一个坑,放不下就换下一个坑,而不是拆散逐场投放。
+     *
+     * 逐场投放会让分会的尾巴散落到各处 —— 某个分会最后一两篇被挤到
+     * 当天最末、独自待在一个厅里,读者看到的是「这一场怎么孤零零的」。
+     * 分会是学术上的一个整体,应当连着开完。
+     *
+     * 超过一个下午装不下的大分会(二十几篇)才拆,并且按天拆:
+     * 先在当前坑排满当天下午,余下的整段挪到下一个可用的坑,
+     * 这与真实会议「BH1 分两个半天开」的做法一致。
+     */
+    let rest = talks;
+    while (rest.length > 0) {
+      // 选能装下最多的坑;都装不下就选最空的,先排一部分
+      const spot = slots.reduce((best, s) => {
+        const capS = Math.floor((SLOT_END - s.free) / TALK);
+        const capB = Math.floor((SLOT_END - best.free) / TALK);
+        if (capS !== capB) return capS > capB ? s : best;
+        return s.free < best.free ? s : best;
       });
-    });
+      const capacity = Math.max(1, Math.floor((SLOT_END - spot.free) / TALK));
+      const chunk = rest.slice(0, capacity);
+      rest = rest.slice(capacity);
+
+      chunk.forEach((a, k) => {
+        const startH = spot.free + k * TALK;
+        const h = Math.floor(startH);
+        const m = Math.round((startH - h) * 60);
+        rows.push({
+          eventId: event!.id, roomId: spot.room.id, kind: 'talk',
+          submissionId: submissionByContribution.get(a.contributionId) ?? null,
+          title: a.title,
+          startsAt: rome(spot.day, h, m), endsAt: rome(spot.day, h, m + 22),
+          speakers: a.authors
+            .filter((au) => looksLikeName(tidyName(au.name)))
+            .slice(0, 2)
+            .map((au) => ({
+              name: tidyName(au.name), affiliation: au.affiliation ?? undefined,
+            })),
+        });
+      });
+
+      // 分会之间留 15 分钟换场
+      spot.free += chunk.length * TALK + 0.25;
+    }
   });
 
   for (let i = 0; i < rows.length; i += CHUNK) {

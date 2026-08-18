@@ -1,4 +1,29 @@
-.prose { max-width: 46em; }
+/*
+ * 正文铺满内容区。
+ *
+ * 46em 是给「一栏正文 + 一栏侧栏」的版式定的;侧栏撤掉之后,
+ * 那个上限就变成了页面右侧一片空占位 —— 内容只占了一半宽度,
+ * 另一半什么都没有。改为跟着容器走,由页面自身的 max-width 收口。
+ *
+ * 段落两端对齐:长段落右缘参差时,视线回行要多找一次起点。
+ * 配 hyphens: auto 才不会为了对齐而拉出大片词间空隙 ——
+ * 只对齐不断词是两端对齐最常见的翻车方式。
+ */
+.prose { max-width: none; }
+
+.prose p,
+.prose li {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* 短行不对齐:标题、说明、图注被拉开字距会很难看 */
+.prose figcaption,
+.prose blockquote p {
+  text-align: left;
+  hyphens: manual;
+}
 .prose h2 {
   font-size: var(--yu-text-title-3-size);
   font-weight: var(--yu-text-title-3-weight);

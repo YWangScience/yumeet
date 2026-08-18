@@ -45,7 +45,8 @@ export default async function EventLayout({ children, params }: Props) {
    * 不会因为漏配一个 slug 就在导航上消失。
    */
   type NavSection =
-    | 'schedule' | 'program' | 'talks' | 'speakers' | 'committee' | 'award' | 'events' | 'about'
+    | 'schedule' | 'program' | 'talks' | 'speakers' | 'committee' | 'participants'
+    | 'award' | 'events' | 'about'
     /** 内容已被别处完整覆盖的页面:保留可访问,但不占导航位 */
     | 'hidden';
 
@@ -83,14 +84,15 @@ export default async function EventLayout({ children, params }: Props) {
     talks: tt('navTalks'),
     speakers: tt('speakers'),
     committee: tt('committees'),
+    participants: tt('participants'),
     award: tt('navAward'),
     events: tt('navEvents'),
     about: tt('navAbout'),
   };
 
   const sections: Record<NavSection, { href: string; label: string }[]> = {
-    schedule: [], program: [], talks: [], speakers: [], committee: [], award: [],
-    events: [], about: [], hidden: [],
+    schedule: [], program: [], talks: [], speakers: [], committee: [], participants: [],
+    award: [], events: [], about: [], hidden: [],
   };
 
   // 内建页面先落位,它们是每个板块里最主要的那一项
@@ -103,9 +105,10 @@ export default async function EventLayout({ children, params }: Props) {
   if (people.committee > 0) {
     sections.committee.push({ href: `${base}/committees`, label: tt('committees') });
   }
-  // 参会者名单与委员会同属「谁来了」,放在同一板块
+  // 参会者名单单独成项:六百多人是一份独立的名录,
+  // 塞进委员会菜单里会让人以为它是某个委员会的下属页面
   if (people.participants > 0) {
-    sections.committee.push({ href: `${base}/participants`, label: tt('participants') });
+    sections.participants.push({ href: `${base}/participants`, label: tt('participants') });
   }
 
   for (const p of navPages) {
@@ -119,7 +122,8 @@ export default async function EventLayout({ children, params }: Props) {
    * 让人点开一个菜单只为看到里面孤零零一项,是纯粹的浪费。
    */
   const ORDER: NavSection[] = [
-    'program', 'schedule', 'talks', 'speakers', 'committee', 'award', 'events', 'about',
+    'program', 'schedule', 'talks', 'speakers', 'committee', 'participants',
+    'award', 'events', 'about',
   ];
   const navEntries: NavEntry[] = [];
 

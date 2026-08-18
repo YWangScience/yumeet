@@ -137,6 +137,8 @@ interface Layout {
   soloRows?: boolean[];
   /** 有内容但无并行的整段区间,吸顶行在这里只写主会场 */
   soloBands?: { start: number; span: number }[];
+  /** 为会场表头插入的行:固定高度,不代表任何时段 */
+  headRows?: boolean[];
   placed: Placed[];
   firstMs: number;
   lastMs: number;
@@ -158,7 +160,7 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     lastMs = Math.max(lastMs, Date.parse(s.end));
   }
   if (!Number.isFinite(firstMs) || !Number.isFinite(lastMs)) {
-    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [], colBands: [], soloRows: [], soloBands: [] };
+    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [], colBands: [], soloRows: [], soloBands: [], headRows: [] };
   }
 
   const gridStart = Math.floor(firstMs / SNAP_MS) * SNAP_MS;
@@ -327,8 +329,43 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     }
   }
 
+  /*
+   * 给每段并行的会场表头插入一行专属的格子。
+   *
+   * 表头之前是直接放在区间的起始行上,而那一行同时也是第一批报告的位置 ——
+   * 六个列名有五个被卡片压住,只有空着的那列露得出来。
+   * 解决办法不是把表头挪走(列名就该长在表里),而是给它腾出位置:
+   * 在每段并行开始前插一行,所有后续内容整体下移一行。
+   * 时间轴的比例不受影响 —— 插入的这一行不代表任何时段,
+   * 它只是版面上的一条,高度固定。
+   */
+  const HEAD_ROWS = 1;
+  const starts = colBands.map((b) => b.start).sort((a, b) => a - b);
+  const insertsBefore = (r: number) => starts.filter((b) => b <= r).length;
+  const map = (r: number) => r + insertsBefore(r);
+  const rows2 = rows + starts.length * HEAD_ROWS;
+
+  const compressed2 = new Array<boolean>(rows2 + 2).fill(false);
+  const soloRows2 = new Array<boolean>(rows2 + 2).fill(false);
+  const headRows = new Array<boolean>(rows2 + 2).fill(false);
+  for (let r = 1; r <= rows + 1; r++) {
+    compressed2[map(r)] = compressed[r] === true;
+    soloRows2[map(r)] = soloRows[r] === true;
+  }
+  for (const b of starts) headRows[map(b) - 1] = true;
+
   return {
-    dayRooms, rows, ticks, placed, firstMs, lastMs, compressed, colBands, soloRows, soloBands,
+    dayRooms,
+    rows: rows2,
+    ticks: ticks.map((t) => ({ ...t, row: map(t.row) })),
+    placed: placed.map((p) => ({ ...p, rowStart: map(p.rowStart), rowEnd: map(p.rowEnd) })),
+    firstMs,
+    lastMs,
+    compressed: compressed2,
+    soloRows: soloRows2,
+    headRows,
+    colBands: colBands.map((b) => ({ start: map(b.start), span: b.span + insertsBefore(b.start + b.span) - insertsBefore(b.start) })),
+    soloBands: soloBands.map((b) => ({ start: map(b.start), span: b.span + insertsBefore(b.start + b.span) - insertsBefore(b.start) })),
   };
 }
 
@@ -466,14 +503,17 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
     const gap = layout.compressed ?? [];
     const solo = layout.soloRows ?? [];
     // 三档行高:空档最矮、无并行时段其次、有并行的时段用完整格高
+    const head = layout.headRows ?? [];
     const tierOf = (r: number) =>
-      gap[r] ? 'gap' : (solo[r] ? 'solo' : 'full');
+      head[r] ? 'head' : (gap[r] ? 'gap' : (solo[r] ? 'solo' : 'full'));
     // 无并行的行用 minmax(…, auto):标题折成两行时这一行跟着长高,
     // 而不是把字裁掉。有并行的行必须严格等比,否则各会场对不齐。
     const size: Record<string, string> = {
       gap: 'var(--sched-slot-gap-h)',
       solo: 'minmax(var(--sched-slot-solo-h), auto)',
       full: 'var(--sched-slot-h)',
+      // 表头那一行不代表时段,高度按内容给
+      head: 'max-content',
     };
     const parts: string[] = [];
     let i = 1;
@@ -650,7 +690,31 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
             )}
 
             {/*
-              * 网格内不再放会场表头。
+              * 会场表头长在表里,占它自己那一行(布局阶段为每段并行插入的)。
+              * 不再与第一批卡片抢同一行,所以六个列名都露得出来。
+              */}
+            {(layout.colBands ?? []).map((band) => (
+              <div
+                key={`head-${band.start}`}
+                className={styles.roomHead}
+                style={cssVars({
+                  gridColumn: '1 / -1',
+                  gridRow: String(band.start - 1),
+                  gridTemplateColumns: template,
+                })}
+              >
+                <span className={styles.roomHeadGutter} />
+                {layout.dayRooms.map((r) => (
+                  <span key={r.id} className={styles.roomHeadCell}>
+                    <span className={styles.roomHeadName}>{r.name}</span>
+                    {r.location && <span className={styles.roomHeadLoc}>{r.location}</span>}
+                  </span>
+                ))}
+              </div>
+            ))}
+
+            {/*
+              * 旧注释保留说明当初为何一度移走:
               *
               * 它排在并行区间的起始行,而那一行同时也是第一批报告的位置 ——
               * 六个列名里有五个被卡片压在下面,只有下午空着的主会场那列露得出来,
@@ -660,7 +724,15 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
               * 而且会随所处时段在「只有主会场」与「全部会场」之间切换。
               * 一处说清楚,好过两处各说一半。
               */}
-            {layout.ticks.map((t) => (
+            {/*
+              * 整点刻度只画在并行时段。
+              *
+              * 全体大会那段是一行行的表格,每行左端就写着 09:00–09:45,
+              * 左侧再标一次整点,同一个时间在一行里出现两遍。
+              * 并行时段不同:那里卡片按列铺开、时间只在卡片内部,
+              * 需要左侧刻度作为跨列的共同参照。
+              */}
+            {layout.ticks.filter((t) => (layout.soloRows ?? [])[t.row] !== true).map((t) => (
               <div
                 key={t.key}
                 className={styles.tick}
@@ -732,10 +804,8 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                     {kicker && !wide && <span className={styles.kicker}>{kicker}</span>}
                     <h3 className={styles.cardTitle}>{session.title}</h3>
                   </div>
-                  {/* 独占整行时会场名不再由列头表达,补一枚小标签 */}
-                  {wide && soloRoom && (
-                    <span className={styles.cardRoom}>{soloRoom.name}</span>
-                  )}
+                  {/* 行内不再重复会场名:表头那一行已经写着主会场,
+                      每条报告后面再挂一遍,一屏就是八九次同样的字 */}
                   <span className={styles.srOnly}>
                     {room ? (locale === 'zh' ? `会场:${room.name}` : `Room: ${room.name}`)
                       : (locale === 'zh' ? '全体活动,不限会场' : 'All-venue session')}
