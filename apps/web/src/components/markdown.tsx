@@ -25,12 +25,16 @@ function inline(text: string): string {
   let s = escapeHtml(text);
 
   // 图片先于链接处理(语法是链接的超集)
-  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt: string, src: string) => {
-    const href = safeUrl(src);
-    return href
-      ? `<img src="${href}" alt="${alt}" loading="lazy" />`
-      : alt;
-  });
+  // 图片支持可选的 title:seed 用它标出这是照片还是标志(见 isPhoto)
+  s = s.replace(
+    /!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g,
+    (_m, alt: string, src: string, kind?: string) => {
+      const href = safeUrl(src);
+      if (!href) return alt;
+      const cls = kind === 'photo' ? ` class="${styles.photo}"` : '';
+      return `<img src="${href}"${cls} alt="${alt}" loading="lazy" />`;
+    },
+  );
 
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, label: string, href: string) => {
     const url = safeUrl(href);
@@ -49,7 +53,9 @@ function inline(text: string): string {
 
 export function Markdown({ source }: { source: string }) {
   const blocks: string[] = [];
-  let logos: { src: string; alt: string; href: string | null; caption: string | null }[] = [];
+  let logos: {
+    src: string; alt: string; href: string | null; caption: string | null; photo: boolean;
+  }[] = [];
   let ul: string[] = [];
   let ol: string[] = [];
   let para: string[] = [];
@@ -65,8 +71,8 @@ export function Markdown({ source }: { source: string }) {
    * 这里把连续的 logo 段落收进一个等高网格:图统一 contain 进固定高度的格子,
    * 于是宽高比各异的 logo 看起来是有意为之的一面墙,而不是一堆随机大小的图。
    */
-  const LOGO_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
-  const LOGO_LINK_LINE = /^\[!\[([^\]]*)\]\(([^)\s]+)\)\]\(([^)\s]+)\)$/;
+  const LOGO_LINE = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)$/;
+  const LOGO_LINK_LINE = /^\[!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\]\(([^)\s]+)\)$/;
 
   const flushLogos = () => {
     if (!logos.length) return;
@@ -80,7 +86,7 @@ export function Markdown({ source }: { source: string }) {
      */
     if (logos.length < 3) {
       for (const l of logos) {
-        const img = `<img src="${l.src}" alt="${l.alt}" loading="lazy" />`;
+        const img = `<img src="${l.src}" class="${l.photo ? styles.photo : ''}" alt="${l.alt}" loading="lazy" />`;
         const inner = l.href
           ? `<a href="${l.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
           : img;
@@ -91,7 +97,7 @@ export function Markdown({ source }: { source: string }) {
       return;
     }
     const cells = logos.map((l) => {
-      const img = `<img src="${l.src}" alt="${l.alt}" loading="lazy" />`;
+      const img = `<img src="${l.src}" class="${l.photo ? styles.photo : ''}" alt="${l.alt}" loading="lazy" />`;
       const inner = l.href
         ? `<a href="${l.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
         : img;
@@ -110,10 +116,12 @@ export function Markdown({ source }: { source: string }) {
       const bare = LOGO_LINE.exec(joined);
       if (link || bare) {
         const alt = (link ? link[1] : bare![1]) ?? '';
-        const src = safeUrl((link ? link[2] : bare![2]) ?? '');
+        const raw = (link ? link[2] : bare![2]) ?? '';
+        const src = safeUrl(raw);
         const href = link ? safeUrl(link[3] ?? '') : null;
+        const kind = /"([^"]*)"/.exec(joined)?.[1] ?? '';
         if (src) {
-          logos.push({ src, alt: escapeHtml(alt), href, caption: null });
+          logos.push({ src, alt: escapeHtml(alt), href, caption: null, photo: kind === 'photo' });
           para = [];
           return;
         }

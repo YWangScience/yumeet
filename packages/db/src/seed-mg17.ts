@@ -49,15 +49,85 @@ interface StructuredPerson {
   photoUrl?: string | null; role?: string | null; position: number;
 }
 
+/** 抓取下来的图片在站点里的落地目录 */
+const PUBLIC_ASSETS = join(import.meta.dirname, '../../../apps/web/public/mg17');
+
+/** 校验不通过的图片,汇总后在末尾提示 */
+const brokenImages: string[] = [];
+
 const read = <T>(f: string): T =>
   JSON.parse(readFileSync(join(DATA, f), 'utf8')) as T;
 
-/** 页面正文里的 Indico 图片链接改写为本站资源路径 */
+/**
+ * 判断一张图是「照片」还是「标志」。
+ *
+ * 两者要的排版正好相反:照片该填满格子(cover),圆角才裁得到照片本身,
+ * 否则 contain 之下四角留白、圆角只裁到透明区域,看起来还是方角;
+ * 标志则绝不能裁(contain),裁掉一角的 logo 是事故。
+ *
+ * 判据用文件本身而不是猜:JPEG 一定是照片(格式不支持透明);
+ * PNG 带 alpha 通道的基本都是去背的标志。判不出来时按标志处理 ——
+ * 宁可四角留白,也不能把 logo 裁了。
+ */
+function isPhoto(buf: Buffer): boolean {
+  const hex = buf.subarray(0, 4).toString('hex');
+  if (hex.startsWith('ffd8ff')) return true;              // JPEG:没有透明通道
+  if (hex.startsWith('89504e47')) {
+    // PNG 的 IHDR 固定在偏移 25 处放 colour type:4 与 6 含 alpha
+    const colourType = buf[25];
+    return colourType !== 4 && colourType !== 6;
+  }
+  return false;
+}
+
+/** PNG / JPEG / GIF / WebP / SVG 的文件头 */
+function sniffImage(buf: Buffer): boolean {
+  if (buf.length < 12) return false;
+  const hex = buf.subarray(0, 12).toString('hex');
+  const ascii = buf.subarray(0, 64).toString('latin1').trimStart().toLowerCase();
+  return hex.startsWith('89504e47')                       // PNG
+    || hex.startsWith('ffd8ff')                            // JPEG
+    || hex.startsWith('47494638')                          // GIF
+    || (hex.startsWith('52494646') && buf.subarray(8, 12).toString() === 'WEBP')
+    || ascii.startsWith('<svg') || ascii.startsWith('<?xml');
+}
+
+/**
+ * 页面正文里的 Indico 图片链接改写为本站资源路径。
+ *
+ * 抓取时如果对方返回的是登录页或错误页,内容会被原样存成 .png ——
+ * 站上就出现一张永远加载不出来的图,而扩展名看着完全正常。
+ * (MG17 的 wireless 页就中过一次:GARR 把 eduroam 的 logo 挪走后
+ * 返回 302 到一张 HTML,于是 104KB 的「PNG」其实是一整页 HTML。)
+ * 这里按文件头判断真实类型,不是图的直接把引用去掉 ——
+ * 页面少一张装饰图,好过留一个破图标。
+ */
 function rewriteImages(page: RawPage): string {
   let body = page.body;
   page.images.forEach((url, i) => {
     const local = page.localImages?.[i];
-    if (local) body = body.split(url).join(`/mg17/${local}`);
+    if (!local) return;
+    const file = join(PUBLIC_ASSETS, local);
+    let ok = false;
+    try {
+      ok = sniffImage(readFileSync(file));
+    } catch {
+      ok = false;   // 文件根本不存在
+    }
+    if (ok) {
+      // 在 Markdown 的 title 位上标出类型,渲染层据此选 cover / contain
+      const kind = isPhoto(readFileSync(file)) ? 'photo' : 'logo';
+      body = body
+        .split(`](${url})`).join(`](/mg17/${local} "${kind}")`)
+        .split(url).join(`/mg17/${local}`);
+    } else {
+      brokenImages.push(`${page.slug}: ${local} ← ${url}`);
+      // 连同它所在的 Markdown 图片语法一起删掉,不留空的 ![]()
+      body = body
+        .split(new RegExp(`!\\[[^\\]]*\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`))
+        .join('')
+        .split(url).join('');
+    }
   });
   return body;
 }
@@ -433,6 +503,10 @@ async function main() {
   console.log(`  人物    ${structured.filter((p) => p.kind === 'speaker').length} 位特邀讲者 + `
     + `${structured.filter((p) => p.kind === 'committee').length} 位委员`);
   console.log('  注:参会者与主席的邮箱未导入(公开站点从未展示,见文件头说明)');
+  if (brokenImages.length) {
+    console.log(`\n  ⚠ 跳过 ${brokenImages.length} 张无效图片(抓取到的不是图片文件):`);
+    for (const b of brokenImages) console.log(`     ${b}`);
+  }
   process.exit(0);
 }
 

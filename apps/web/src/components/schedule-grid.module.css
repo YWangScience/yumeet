@@ -2,18 +2,25 @@
    颜色 / 字号 / 间距一律取 --yu- token;--sched-* 仅是本组件的几何量。 */
 
 .root {
-  /* 5 分钟一格。16px × 最小 5 格 = 78px,正好装下
-     「时间+讲者(至多两行)」与「标题(至多三行)」。 */
-  --sched-slot-h: 16px;
+  /*
+   * 5 分钟一格。
+   *
+   * 22 分钟的报告占 4 格,要装下「时间+讲者(至多两行)」与
+   * 「标题(至多三行)」约 78px,再留 6px 的卡间距 —— 每格需 21px。
+   * 高度只能从这里加,不能靠让卡片多占格来换:多占格会伸进下一场的时段,
+   * 相邻两张就叠在一起(曾经就是这么坏的)。
+   */
+  --sched-slot-h: 21px;
   /*
    * 无并行时段的格高。
    *
    * 按时长等比给高度,只在需要横向比对多个会场时才有意义 ——
    * 上午只有一个会场在用,把 45 分钟画成 144 高只是把一行字撑开三倍。
-   * 压到 6px/5 分钟:45 分钟得 54px,正好是一条横排卡片的高度,
-   * 时长的长短关系仍然看得出来。
+   * 压到 4.5px/5 分钟:45 分钟得 40px,一条横排卡片的高度,
+   * 时长的长短关系仍然看得出来。上午八九场全体报告,每场省下十几像素,
+   * 加起来就是少滚半屏。
    */
-  --sched-slot-solo-h: 6px;
+  --sched-slot-solo-h: 4.5px;
   /* 空档里的 5 分钟:压到 1/5。空白仍在、先后仍看得出,
      但整天不会被上午的空场撑成两屏。 */
   --sched-slot-gap-h: 2.6px;
@@ -221,16 +228,29 @@
 
 /* ---------------------------------------------------------------- 会场表头行 */
 
+/*
+ * 会场表头。
+ *
+ * 列宽直接继承父网格(subgrid),不必再复述一遍 grid-template-columns ——
+ * 两处各写一份迟早会对不齐。
+ *
+ * 不做 sticky:它悬停在顶部时会盖住正在读的那一行卡片,
+ * 而并行时段本来就是连续的一大片,列名跟着滚走并不影响判断 ——
+ * 六个会场的顺序在一段之内是固定的。宁可少一个花招,也不要遮住内容。
+ */
 .roomHead {
-  position: sticky;
-  top: var(--sched-tabs-h);
-  z-index: 2;
+  position: relative;
+  z-index: 1;
   display: grid;
   column-gap: var(--sched-col-gap);
   align-items: end;
   padding: var(--yu-space-3) 0 var(--yu-space-2);
+  margin-bottom: var(--yu-space-1);
   background: var(--yu-color-bg-page);
   border-bottom: 1px solid var(--yu-color-hairline);
+  /* 自己占满所跨的两行并把内容压在顶部,卡片从它下方开始,不会被盖住 */
+  height: max-content;
+  align-self: start;
 }
 
 .roomHeadGutter {
@@ -284,21 +304,21 @@
 }
 
 /*
- * 网格线的分量。
+ * 网格线几乎不画。
  *
- * 六列会场 × 十几个整点,如果列线与时间线都用同一档实线,画面上就是
- * 上百条等重的线在跟卡片抢注意力 —— 读者要找的是卡片,不是网格。
- * 所以把两组线都退到极淡:列线只需暗示「这是另一个会场」,
- * 时间线只需暗示「这里是整点」。真正划分区块的是卡片自身的边框。
+ * 卡片有了自己的底色之后,列的边界由卡片自身呈现,竖线就多余了 ——
+ * 六条竖线穿过一屏五六十张卡片,只是在已经清楚的地方再描一遍。
+ * 整点线保留,但压到刚好看得见:它是读者定位「几点」的唯一参照,
+ * 不能没有,也不该抢戏。
  */
 .colLine {
   z-index: 0;
-  border-left: 1px solid color-mix(in srgb, var(--yu-color-hairline) 45%, transparent);
+  border-left: 0;
 }
 
 .tick {
   z-index: 0;
-  border-top: 1px dotted color-mix(in srgb, var(--yu-color-hairline) 70%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--yu-color-hairline) 40%, transparent);
   pointer-events: none;
 }
 
@@ -324,21 +344,28 @@
   flex-direction: column;
   gap: 2px;
   overflow: hidden;
-  padding: var(--yu-space-1) var(--yu-space-2);
-  margin-bottom: 2px;
-  /* 卡片不描完整边框:底色 + 左侧色条已经足够把它从网格里托出来。
-     六百张卡片各描一圈线,合起来比网格线还吵。 */
+  padding: var(--yu-space-2);
+  /*
+   * 卡片之间留 6px 空隙。
+   *
+   * 相邻两场靠间隔分开,而不是靠各描一圈线 —— 一屏五六十张卡片时,
+   * 六十个框比六十段留白吵得多。但间隔必须够大:3px 时同色的两张卡片
+   * 会在视觉上连成一条,读者以为那是一场四十分钟的报告,
+   * 其实是两场二十分钟的。分隔的宽度直接决定读得对不对,不只是好不好看。
+   */
+  margin-bottom: 6px;
   border: 0;
-  border-radius: var(--yu-radius-control);
+  border-radius: 8px;
+  /* 只用底色区分:页面是白的,卡片是浅灰的,边界自然出现。
+     这比画线更安静,也不会在密排时糊成一片网格。 */
   background: var(--yu-color-bg-section);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yu-color-hairline) 55%, transparent);
+  box-shadow: none;
   transition: box-shadow 160ms ease, background 160ms ease;
 }
 
 .card:hover {
   background: var(--yu-color-bg-elevated);
-  box-shadow: inset 0 0 0 1px var(--yu-color-accent),
-              0 2px 10px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -521,9 +548,9 @@
  * 这也正是纸质会议手册的排法。
  */
 .cardWide {
-  padding: var(--yu-space-3) var(--yu-space-4);
+  padding: var(--yu-space-2) var(--yu-space-4);
   /* 一条横排卡片至少要装下「标题一行 + 标签」 */
-  min-height: 46px;
+  min-height: 38px;
 }
 
 .cardWide .cardLink {
@@ -543,7 +570,7 @@
 .cardWide .cardLink > .speakers { grid-area: spk; }
 
 .cardWide .cardTime {
-  font-size: var(--yu-text-footnote-size);
+  font-size: var(--yu-text-caption-size);
   font-weight: 500;
   color: var(--yu-color-text-primary);
 }
@@ -555,12 +582,14 @@
   gap: var(--yu-space-2) var(--yu-space-3);
 }
 
-/* 全体报告是一天里的重头戏,标题给到正文字号并放开到两行 */
+/* 全体报告的标题用 callout:比正文小一档。
+   它已经独占一整行,横向空间足够,不必再靠字号强调 ——
+   一天八九场都用大字,反而把这一整段撑得比下午的分会还占地方。 */
 .cardWide .cardTitle {
-  font-size: var(--yu-text-body-size);
+  font-size: var(--yu-text-callout-size);
   font-weight: 600;
-  letter-spacing: var(--yu-text-body-tracking);
-  line-height: 1.35;
+  letter-spacing: var(--yu-text-callout-tracking);
+  line-height: 1.3;
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
@@ -576,7 +605,7 @@
 }
 
 .cardWide .speakerName {
-  font-size: var(--yu-text-callout-size);
+  font-size: var(--yu-text-footnote-size);
   color: var(--yu-color-text-primary);
   -webkit-line-clamp: 1;
   line-clamp: 1;
@@ -618,8 +647,16 @@
  * 类型差异只靠底色与左侧色条表达,不再各自描边。
  * 这样一屏几十张卡片时,视觉上分层的是「深浅」而不是「几十种框」。
  */
+/* 普通报告用最浅的灰,数量最多,越安静越好 */
 .kind_talk {
-  background: var(--yu-color-bg-elevated);
+  background: var(--yu-color-bg-section);
+}
+
+/* 相邻两场之间的顶部细线:间隔之外再给一道极淡的分界,
+   在同色卡片密排时确保「这是新的一场」不会被看漏 */
+.card + .card,
+.kind_talk {
+  border-top: 1px solid transparent;
 }
 
 .kind_keynote {
@@ -642,15 +679,15 @@
   border-color: color-mix(in srgb, var(--yu-color-accent) 45%, transparent);
 }
 
-/* 茶歇午餐是背景信息,压到最淡,让它从卡片序列里退开 */
+/* 茶歇午餐是背景信息:不给底色,让它从卡片序列里退开 */
 .kind_break {
   background: transparent;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yu-color-hairline) 45%, transparent);
+  box-shadow: none;
 }
 
 .kind_break:hover {
   background: var(--yu-color-bg-section);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yu-color-hairline) 45%, transparent);
+  box-shadow: none;
 }
 
 .kind_break .cardTitle,
@@ -832,4 +869,15 @@
 .tlTitleLink:focus-visible {
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* 上午那行只写主会场的表头:在网格之外,自己排两栏(时间刻度列 + 内容) */
+.roomHeadSolo {
+  display: grid;
+  grid-template-columns: var(--sched-gutter) minmax(0, 1fr);
+  column-gap: var(--sched-col-gap);
+  align-items: end;
+  padding: var(--yu-space-3) 0 var(--yu-space-2);
+  margin-bottom: var(--yu-space-2);
+  border-bottom: 1px solid var(--yu-color-hairline);
 }

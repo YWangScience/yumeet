@@ -61,11 +61,6 @@ export default async function PrivacyPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label={locale === 'zh' ? '面包屑' : 'Breadcrumb'}>
-        <Link href={base || "/"}>{notice.event.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('privacyNav')}</span>
-      </nav>
 
       <p className={styles.eyebrow}>{tt('pvEyebrow')}</p>
       <h1 className={styles.title}>{tt('pvTitle')}</h1>

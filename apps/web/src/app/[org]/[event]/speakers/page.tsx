@@ -37,11 +37,6 @@ export default async function SpeakersPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={base || "/"}>{content.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('speakers')}</span>
-      </nav>
 
       <h1 className={styles.title}>{tt('speakers')}</h1>
       <p className={styles.lede}>{tt('speakersLede', { n: speakers.length })}</p>

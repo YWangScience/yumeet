@@ -5,6 +5,7 @@ import { getEventBySlug, searchAbstracts, listTracks, encodeId } from '@yumeet/c
 import { resolveLocale } from '@/lib/locale-server';
 import { eventBase } from '@/lib/event-base';
 import { translator, eventContent, type TKey } from '@/lib/i18n';
+import { TalkFilters } from '@/components/talk-filters';
 import styles from './abstracts.module.css';
 
 /** 投稿类型的枚举值直出会在中文界面里露出一串英文,统一走词条 */
@@ -68,39 +69,25 @@ export default async function AbstractsPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={base || "/"}>{content.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('abstracts')}</span>
-      </nav>
 
       <h1 className={styles.title}>{tt('abstracts')}</h1>
       <p className={styles.lede}>
         {tt('abstractsLede', { n: result.totalAll, tracks: tracks.length })}
       </p>
 
-      <form className={styles.filters} method="get" role="search">
-        {locale !== 'zh' && <input type="hidden" name="lang" value={locale} />}
-        <div className={styles.searchRow}>
-          <label className={styles.srOnly} htmlFor="q">{tt('searchAbstracts')}</label>
-          <input
-            id="q" name="q" type="search" defaultValue={q}
-            placeholder={tt('searchPlaceholder')}
-            className={styles.search}
-          />
-          <button type="submit" className={styles.searchBtn}>{tt('search')}</button>
-        </div>
-        <div className={styles.trackRow}>
-          <label className={styles.trackLabel} htmlFor="track">{tt('track')}</label>
-          <select id="track" name="track" defaultValue={track} className={styles.trackSelect}>
-            <option value="">{tt('allTracks')}</option>
-            {tracks.map((t) => (
-              <option key={t.track} value={t.track}>{t.track} ({t.n})</option>
-            ))}
-          </select>
-          <noscript><button type="submit" className={styles.searchBtn}>{tt('apply')}</button></noscript>
-        </div>
-      </form>
+      <TalkFilters
+        q={q}
+        track={track}
+        tracks={tracks}
+        lang={locale !== 'zh' ? locale : null}
+        labels={{
+          search: tt('searchAbstracts'),
+          placeholder: tt('searchPlaceholder'),
+          track: tt('track'),
+          allTracks: tt('allTracks'),
+          clear: tt('clearFilters'),
+        }}
+      />
 
       <p className={styles.count} role="status">
         {tt('resultCount', { n: result.total })}

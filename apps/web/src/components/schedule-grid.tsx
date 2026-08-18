@@ -56,11 +56,13 @@ const SNAP_MS = 30 * 60_000;
 /*
  * 卡片的最小格数。
  *
- * 由内容预算倒推:时间与讲者一行(长名可折到两行)+ 标题最多三行,
- * 约需 78px;5 格 × 16px 恰好覆盖。并行分会的报告间隔 24 分钟(= 5 格),
- * 所以取 5 不会压到下一场。
+ * 这个值曾经导致相邻两场重叠:报告时长 22 分钟(4.4 → 4 格),
+ * 但间隔只有 24 分钟(约 4.8 格),把最小值抬到 5 就会伸进下一场的格子。
+ * 高度不该靠「多占几格」换取 —— 那是在时间轴上撒谎。
+ * 改为按真实时长占格,内容放不下时提高每格的像素高度(--sched-slot-h),
+ * 时间轴与版面于是各自成立。
  */
-const MIN_SLOTS = 5;
+const MIN_SLOTS = 4;
 /** 低于该高度的卡片隐藏所属机构,避免溢出 */
 const DENSE_SLOTS = 9;
 
@@ -200,6 +202,8 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
    */
   const placed = placedRaw.map((p): Placed => {
     if (p.colIndex < 0) return p;
+    // 主会场那一列始终保留:上午的全体大会就在这里,
+    // 若也横跨整行,读者会以为主会场整个上午都空着。
     const overlapsOther = placedRaw.some((q) => (
       q !== p && q.colIndex >= 0 && q.colIndex !== p.colIndex
       && q.rowStart < p.rowEnd && p.rowStart < q.rowEnd
@@ -256,13 +260,29 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
   }
   for (let r = 1; r <= rows + 1; r++) if (parallel[r]) soloRows[r] = false;
 
-  const colBands: { start: number; span: number }[] = [];
+  /*
+   * 相邻两场报告之间常有几分钟的换场空当,那几行没有任何卡片。
+   * 若照此断开,一个下午会被切成十几段,每段都顶一行会场表头 ——
+   * 表头于是每隔两屏就重复一次。所以短于 30 分钟的空当不算断开:
+   * 它是同一场并行的内部间隙,不是并行结束。
+   */
+  const BAND_JOIN_ROWS = 6;
+  const rawBands: { start: number; span: number }[] = [];
   let bandStart = 0;
   for (let r = 1; r <= rows + 1; r++) {
     if (parallel[r] && bandStart === 0) bandStart = r;
     if ((!parallel[r] || r === rows + 1) && bandStart !== 0) {
-      colBands.push({ start: bandStart, span: r - bandStart });
+      rawBands.push({ start: bandStart, span: r - bandStart });
       bandStart = 0;
+    }
+  }
+  const colBands: { start: number; span: number }[] = [];
+  for (const b of rawBands) {
+    const prev = colBands[colBands.length - 1];
+    if (prev && b.start - (prev.start + prev.span) <= BAND_JOIN_ROWS) {
+      prev.span = b.start + b.span - prev.start;
+    } else {
+      colBands.push({ ...b });
     }
   }
 
@@ -467,20 +487,23 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
 
         {/* 桌面:多轨时间网格 */}
         <div className={styles.gridView}>
-          <div
-            className={styles.roomHead}
-            style={cssVars({ gridTemplateColumns: template })}
-            aria-hidden="true"
-          >
-            <span className={styles.roomHeadGutter} />
-            {layout.dayRooms.map((r) => (
-              <span key={r.id} className={styles.roomHeadCell}>
-                <span className={styles.roomHeadName}>{r.name}</span>
-                {r.location && <span className={styles.roomHeadLoc}>{r.location}</span>}
+          {/*
+            * 上午没有并行,但主会场是在用的 —— 全体大会就在那里开。
+            * 先在网格上方放一行「只写主会场」的表头,读者一开始就知道
+            * 这些报告在哪个厅;其余会场的列名留到下午真正分栏时再出现。
+            * 放在网格之外而不是挤进首行:挤进去会压住第一张卡片。
+            */}
+          {(layout.colBands?.[0]?.start ?? 2) > 2 && layout.dayRooms[0] && (
+            <div className={styles.roomHeadSolo} aria-hidden="true">
+              <span className={styles.roomHeadGutter} />
+              <span className={styles.roomHeadCell}>
+                <span className={styles.roomHeadName}>{layout.dayRooms[0].name}</span>
+                {layout.dayRooms[0].location && (
+                  <span className={styles.roomHeadLoc}>{layout.dayRooms[0].location}</span>
+                )}
               </span>
-            ))}
-          </div>
-
+            </div>
+          )}
           <div
             className={styles.grid}
             role="list"
@@ -501,6 +524,48 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                 />
               )),
             )}
+
+            {/*
+              * 会场表头贴在每段并行区间的开头,而不是整天最上方。
+              *
+              * 上午只有一个会场在用,那排列名头上没有任何对应的列 ——
+              * 读者要先看六个会场名,再往下翻两屏才遇到第一个分栏。
+              * 把它挪到分栏真正开始的地方,列名与列就对上了;
+              * 一天里若有多段并行(上下午各一场),每段各自带一行表头。
+              */}
+            {/*
+              * 上午那段没有并行,但主会场是在用的 —— 全体大会就在那里开。
+              * 所以在整天最上方先放一行「只写主会场」的表头,
+              * 让读者一开始就知道这些报告在哪个厅;其余会场的列名
+              * 留到下午真正分栏时再出现(见下面按 band 渲染的那组)。
+              */}
+            {/* 占位:让首行空出表头的高度,卡片从表头下方开始 */}
+            {(layout.colBands ?? []).map((band) => (
+              <div
+                key={`head-${band.start}`}
+                className={styles.roomHead}
+                /*
+                 * 表头横跨整行、占住区间开头的几格,卡片从它下方开始。
+                 * 列模板必须显式复用整表的 —— 它自己是一个 grid item,
+                 * subgrid 在跨行的 item 上拿不到父级列宽,只画得出第一列,
+                 * 六个会场名于是竖着叠成一摞。
+                 */
+                style={cssVars({
+                  gridColumn: '1 / -1',
+                  gridRow: `${band.start} / span 3`,
+                  gridTemplateColumns: template,
+                })}
+                aria-hidden="true"
+              >
+                <span className={styles.roomHeadGutter} />
+                {layout.dayRooms.map((r) => (
+                  <span key={r.id} className={styles.roomHeadCell}>
+                    <span className={styles.roomHeadName}>{r.name}</span>
+                    {r.location && <span className={styles.roomHeadLoc}>{r.location}</span>}
+                  </span>
+                ))}
+              </div>
+            ))}
             {layout.ticks.map((t) => (
               <div
                 key={t.key}

@@ -47,11 +47,6 @@ export default async function CfpPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label={locale === 'zh' ? '面包屑' : 'Breadcrumb'}>
-        <Link href={`/${orgSlug}/${eventSlug}`}>{content.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('cfpTitle')}</span>
-      </nav>
 
       <h1 className={styles.title}>{tt('cfpTitle')}</h1>
       <p className={styles.lede}>{tt('cfpLede')}</p>

@@ -11,18 +11,20 @@
   position: relative;
   display: flex; flex-direction: column; gap: var(--yu-space-3);
   height: 100%;
-  background: var(--yu-color-bg-elevated);
-  border: 1px solid var(--yu-color-hairline);
+  /* 不描边:三十多张卡片各描一圈线,合起来就是一张网格,
+     而这页要给人的印象是一群人,不是一张表。浅底色 + 留白足够分隔。 */
+  background: var(--yu-color-bg-section);
+  border: 0;
   border-radius: var(--yu-radius-card);
   padding: var(--yu-space-4) var(--yu-space-5);
-  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
 }
-/* 悬停时整卡浮起并透出主色边:这是「我可以被按」最直接的一句话,
+/* 悬停时整卡浮起、底色转白:这是「我可以被按」最直接的一句话,
    不需要再写一行字来解释。姓名同时转成主色,指明这一块是一个整体。 */
 .card:hover {
-  border-color: var(--yu-color-accent);
+  background: var(--yu-color-bg-elevated);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
 }
 
 .card:hover .name {
@@ -40,8 +42,8 @@
 .cardOpen {
   composes: card;
   grid-column: 1 / -1;
-  border-color: var(--yu-color-accent);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+  background: var(--yu-color-bg-elevated);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12);
   transform: none;
 }
 
@@ -187,9 +189,10 @@
 }
 
 
+/* 摘要与上方信息之间只留间距,不画分隔线 —— 展开这个动作本身
+   已经说明了「下面是新内容」。 */
 .bio {
-  border-top: 1px solid var(--yu-color-hairline);
-  padding-top: var(--yu-space-3);
+  padding-top: var(--yu-space-2);
 }
 
 /* 摘要是长文,给它比卡片其余部分更宽松的行距 —— 卡片里的其他行是
@@ -203,4 +206,95 @@
   color: var(--yu-color-text-secondary);
   white-space: pre-wrap;
   overflow-wrap: break-word;
+}
+
+/* ── 紧凑名录(首页)────────────────────────────────────── */
+/*
+ * 首页只回答「都有谁来」。头像加姓名,三十多人一屏内看完 ——
+ * 这份阵容本身就是最强的注册理由,摊开比截断到八个人有说服力得多。
+ * 不做展开:想读摘要的人点一下就落到讲者页对应的人,那里空间才够读长文。
+ */
+.roster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--yu-space-4) var(--yu-space-3);
+}
+
+.rosterItem { min-width: 0; }
+
+.rosterLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--yu-space-2);
+  padding: var(--yu-space-3) var(--yu-space-2);
+  border-radius: var(--yu-radius-card);
+  color: inherit;
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.rosterLink:hover {
+  background: var(--yu-color-bg-section);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.rosterLink:hover .rosterName {
+  color: var(--yu-color-accent-text);
+}
+
+.rosterLink:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rosterPhoto, .rosterAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  background: var(--yu-color-bg-section);
+  flex: none;
+}
+
+.rosterAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 600;
+  color: var(--yu-color-text-secondary);
+}
+
+.rosterName {
+  font-size: var(--yu-text-footnote-size);
+  line-height: 1.35;
+  font-weight: 500;
+  text-align: center;
+  color: var(--yu-color-text-primary);
+  transition: color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rosterLink { transition: none; }
+  .rosterLink:hover { transform: none; }
+}
+
+/* 单位:比姓名小一档、颜色更淡。它回答的是「这人是哪儿的」——
+   在国际会议上,这几乎与名字同样重要。 */
+.rosterAff {
+  font-size: var(--yu-text-caption-size);
+  line-height: 1.35;
+  text-align: center;
+  color: var(--yu-color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

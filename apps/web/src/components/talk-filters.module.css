@@ -1,0 +1,108 @@
+/*
+ * 筛选条。不画外框:它是一排控件,不是一个面板 ——
+ * 给它套个盒子只会在页面顶部多出一道横向的分界。
+ */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--yu-space-3);
+  margin-bottom: var(--yu-space-6);
+}
+
+.searchRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.icon {
+  position: absolute;
+  left: var(--yu-space-4);
+  width: 17px;
+  height: 17px;
+  color: var(--yu-color-text-secondary);
+  pointer-events: none;
+}
+
+/*
+ * 输入框与下拉共用同一套外形:同高、同圆角、同底色、同边框。
+ * 之前两者一个是方角白底、一个是系统默认下拉,并排放着像是从两个页面
+ * 各拿了一个控件拼上的。统一之后它们读起来才是「一组筛选」。
+ */
+.search {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--yu-space-4) 0 42px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  background: var(--yu-color-bg-section);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-callout-size);
+}
+
+.search::placeholder { color: var(--yu-color-text-secondary); }
+
+.search:focus-visible,
+.select:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 1px;
+  background: var(--yu-color-bg-elevated);
+}
+
+.select {
+  height: 44px;
+  padding: 0 40px 0 var(--yu-space-4);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  background: var(--yu-color-bg-section);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-callout-size);
+  cursor: pointer;
+  /* 去掉系统原生外观,换成与输入框同一支箭头,两者才像一组 */
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236e6e73' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--yu-space-4) center;
+  background-size: 12px 8px;
+}
+
+.clear {
+  height: 44px;
+  padding: 0 var(--yu-space-4);
+  border: 0;
+  border-radius: var(--yu-radius-pill);
+  background: transparent;
+  color: var(--yu-color-accent-text);
+  font-size: var(--yu-text-callout-size);
+  cursor: pointer;
+}
+
+.clear:hover { background: var(--yu-color-bg-section); }
+
+/* 检索中的细指示:结果是就地替换的,没有页面跳转,
+   不给一点反馈的话会让人以为没生效 */
+.spinner {
+  position: absolute;
+  right: var(--yu-space-4);
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--yu-color-accent) 30%, transparent);
+  border-top-color: var(--yu-color-accent);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
+
+.srOnly {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

@@ -43,11 +43,6 @@ export default async function CommitteesPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="breadcrumb">
-        <Link href={base || "/"}>{content.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('committees')}</span>
-      </nav>
 
       <h1 className={styles.title}>{tt('committees')}</h1>
       <p className={styles.lede}>{tt('committeesLede', { n: all.length })}</p>

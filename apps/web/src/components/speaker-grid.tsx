@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Locale } from '@/lib/i18n';
 import { translator } from '@/lib/i18n';
@@ -48,16 +48,85 @@ function initials(name: string): string {
  * 网格用 align-items: start,于是展开的卡片只把自己撑高,不会顶动同排的其他人。
  */
 export function SpeakerGrid({
-  speakers, locale, moreHref, total,
+  speakers, locale, moreHref, total, compact,
 }: {
   speakers: SpeakerCard[];
   locale: Locale;
   moreHref?: string;
   total?: number;
+  /**
+   * 紧凑名录模式(首页用)。
+   *
+   * 首页要回答的是「都有谁来」——三十多个人名与面孔一次看完,
+   * 这件事本身就是最强的注册理由。所以不展开摘要、不留大段留白,
+   * 只铺头像与姓名;想读摘要的人点一下,落到讲者页对应的人并直接展开。
+   * 同一份数据在两处各司其职:首页看阵容,讲者页读内容。
+   */
+  compact?: boolean;
 }) {
   const tt = translator(locale);
   const [openId, setOpenId] = useState<string | null>(null);
+
+  /*
+   * 从首页名录点过来时带着 #s-<id>。
+   * 只滚到位置还不够 —— 人点的是「我想看这个人讲什么」,
+   * 所以落地即展开那一张,省掉到了之后还要再点一次。
+   */
+  useEffect(() => {
+    if (compact) return;
+    const apply = () => {
+      const m = /^#s-(.+)$/.exec(decodeURIComponent(window.location.hash));
+      if (!m) return;
+      const id = m[1]!;
+      if (!speakers.some((s) => s.id === id)) return;
+      setOpenId(id);
+      requestAnimationFrame(() => {
+        document.getElementById(`s-${id}`)?.scrollIntoView({ block: 'center' });
+      });
+    };
+    apply();
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
+  }, [speakers, compact]);
+
   if (speakers.length === 0) return null;
+
+  if (compact) {
+    return (
+      <>
+        <ul className={styles.roster}>
+          {speakers.map((s) => (
+            <li key={s.id} className={styles.rosterItem}>
+              <Link className={styles.rosterLink} href={`${moreHref ?? ''}#s-${s.id}`}>
+                {s.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className={styles.rosterPhoto}
+                    src={s.photoUrl}
+                    alt=""
+                    loading="lazy"
+                    width={64}
+                    height={64}
+                  />
+                ) : (
+                  <span className={styles.rosterAvatar} aria-hidden="true">{initials(s.name)}</span>
+                )}
+                <span className={styles.rosterName}>{s.name}</span>
+                {s.affiliation && (
+                  <span className={styles.rosterAff}>{s.affiliation}</span>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        {moreHref && total != null && total > speakers.length && (
+          <p className={styles.more}>
+            <Link href={moreHref}>{tt('seeAllSpeakers', { n: total })} →</Link>
+          </p>
+        )}
+      </>
+    );
+  }
 
   return (
     <>

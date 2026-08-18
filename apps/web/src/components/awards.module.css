@@ -1,0 +1,98 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-16);
+}
+
+/*
+ * 分类标题走小字大写,而不是一行大标题 —— 版面的主角是获奖者的名字,
+ * 分类只是它的上标注,压住它才让主角立得起来。
+ */
+.category {
+  font-size: var(--yu-text-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--yu-color-text-secondary);
+  margin-bottom: var(--yu-space-8);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--yu-space-12);
+}
+
+/* 没有肖像的条目不该保留那一列的宽度 —— 否则正文被挤成一条竖排的字。
+   用 flex 而不是固定两列网格:肖像在就占位,不在就让正文铺满。 */
+.entry {
+  display: flex;
+  gap: var(--yu-space-8);
+  align-items: flex-start;
+}
+
+/* 肖像是这页唯一的视觉重点,给它足够尺寸;圆形是人像的通用体例 */
+.portrait {
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 25%;
+  background: var(--yu-color-bg-section);
+}
+
+.body { min-width: 0; flex: 1 1 auto; }
+
+/* 姓名用到 title-3:它是这一页真正要被记住的东西 */
+.recipient {
+  margin: 0;
+  font-size: var(--yu-text-title-3-size);
+  font-weight: var(--yu-text-title-3-weight);
+  letter-spacing: var(--yu-text-title-3-tracking);
+  line-height: 1.15;
+  color: var(--yu-color-text-primary);
+}
+
+.note {
+  margin: var(--yu-space-2) 0 0;
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-secondary);
+}
+
+/*
+ * 授奖词按引文排:左侧一条细线 + 斜体。这是引述他人评价的通用体例,
+ * 比装进一个灰底方框更像一份正式的表彰,也更安静。
+ */
+.citation {
+  margin: var(--yu-space-4) 0 0;
+  padding-left: var(--yu-space-5);
+  border-left: 2px solid color-mix(in srgb, var(--yu-color-accent) 45%, transparent);
+  font-size: var(--yu-text-body-size);
+  line-height: 1.7;
+  font-style: italic;
+  color: var(--yu-color-text-primary);
+  max-width: 62ch;
+}
+
+.footnote {
+  margin: 0;
+  padding-top: var(--yu-space-8);
+  border-top: 1px solid var(--yu-color-hairline);
+  font-size: var(--yu-text-footnote-size);
+  line-height: 1.6;
+  color: var(--yu-color-text-secondary);
+  max-width: 68ch;
+}
+
+@media (max-width: 640px) {
+  .entry {
+    flex-direction: column;
+    gap: var(--yu-space-4);
+  }
+  .portrait { width: 88px; height: 88px; }
+  .recipient { font-size: var(--yu-text-title-2-size); }
+}

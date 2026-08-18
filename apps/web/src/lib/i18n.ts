@@ -292,10 +292,10 @@ const T = {
   },
 
   // 摘要检索(归档)
-  abstracts: { zh: '摘要', en: 'Abstracts' },
+  abstracts: { zh: '学术报告', en: 'Talks' },
   abstractsLede: {
     zh: '本次会议共收录 {n} 篇报告,分布于 {tracks} 个分会。可按标题、作者或正文关键词检索。',
-    en: '{n} contributions across {tracks} sessions. Search by title, author or full text.',
+    en: '{n} talks across {tracks} sessions. Search by title, author or full text.',
   },
   searchAbstracts: { zh: '检索摘要', en: 'Search abstracts' },
   searchPlaceholder: { zh: '标题、作者或关键词…', en: 'Title, author or keyword…' },
@@ -457,7 +457,7 @@ const T = {
 
   // 归档概览
   archiveOverview: { zh: '会议规模', en: 'By the numbers' },
-  archiveContributions: { zh: '篇报告', en: 'contributions' },
+  archiveContributions: { zh: '篇报告', en: 'talks' },
   archiveSessions: { zh: '个分会', en: 'sessions' },
   archiveSpeakers: { zh: '位特邀讲者', en: 'invited speakers' },
   archiveDays: { zh: '天会期', en: 'days' },

@@ -1,28 +1,47 @@
 .wrap { display: grid; gap: var(--yu-space-8); }
+/*
+ * 主席不装进框里。
+ *
+ * 「重要」在排版里的表达方式是字号、字重与留白,不是给它描一圈边、
+ * 铺一层底色。整页本来就是一份朴素的名单,中间突然出现一个带色块的盒子,
+ * 读者第一眼看到的是那个盒子,而不是盒子里的人名。
+ * 换成:大一号的字 + 下方一条细线 + 充足的间距,层次一样清楚,安静得多。
+ */
 .chairs {
-  background: color-mix(in srgb, var(--yu-color-accent) 7%, var(--yu-color-bg-section));
-  border: 1px solid color-mix(in srgb, var(--yu-color-accent) 25%, transparent);
-  border-radius: var(--yu-radius-card);
-  padding: var(--yu-space-5) var(--yu-space-6);
+  padding-bottom: var(--yu-space-5);
+  margin-bottom: var(--yu-space-6);
+  border-bottom: 1px solid var(--yu-color-hairline);
 }
 .chairsLabel {
   font-size: var(--yu-text-caption-size); font-weight: 600;
   letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--yu-color-accent-text); margin-bottom: var(--yu-space-3);
 }
-.chairList { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--yu-space-2); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.chairList { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--yu-space-3) var(--yu-space-8); }
 .chair { display: flex; flex-direction: column; gap: 1px; }
-.chairName { font-size: var(--yu-text-callout-size); font-weight: 600; }
-.chairAff { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-primary); }
+.chairName {
+  font-size: var(--yu-text-headline-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-headline-tracking);
+  color: var(--yu-color-text-primary);
+}
+.chairAff { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); }
 
 .countries { display: grid; gap: var(--yu-space-6); grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 .country { break-inside: avoid; }
+/*
+ * 分组标题不画下划线。
+ *
+ * 二十多个国家分组,每组一条横线,整页就成了二十多道栏杆 ——
+ * 而它们要表达的只是「这里换组了」,留白已经说清楚了。
+ * 改用小字号、大写与字距做标记:同样一眼可辨,页面安静得多。
+ */
 .countryName {
-  font-size: var(--yu-text-footnote-size); font-weight: 600;
-  letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: var(--yu-text-caption-size); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  /* 分类用主色:它是全页唯一的着色,读者靠这一点颜色扫过二十多个分组,
+     比靠横线快得多,也不会把页面切成一格格。 */
   color: var(--yu-color-accent-text);
-  padding-bottom: var(--yu-space-2);
-  border-bottom: 1px solid var(--yu-color-hairline);
   margin-bottom: var(--yu-space-2);
 }
 .members { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }

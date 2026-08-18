@@ -54,11 +54,6 @@ export default async function RegisterPage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="面包屑">
-        <Link href={base || "/"}>{content.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('registration')}</span>
-      </nav>
 
       <h1 className={styles.title}>{tt('registerTitle')}</h1>
       <p className={styles.lede}>{tt('registerLede')}</p>

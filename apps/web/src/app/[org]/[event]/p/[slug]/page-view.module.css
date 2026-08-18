@@ -2,7 +2,9 @@
 .breadcrumb { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); margin-bottom: var(--yu-space-6); }
 .breadcrumb a { color: var(--yu-color-accent-text); text-decoration: none; }
 .breadcrumb a:hover { text-decoration: underline; }
-.layout { display: grid; grid-template-columns: minmax(0,1fr) 220px; gap: var(--yu-space-12); align-items: start; }
+/* 侧栏移除后收回单栏:导航已在顶栏,页面右侧再挂一份同样的清单
+   只是把正文挤窄了两百多像素。 */
+.layout { display: block; }
 .article { min-width: 0; }
 .title {
   font-size: var(--yu-text-title-1-size); font-weight: var(--yu-text-title-1-weight);

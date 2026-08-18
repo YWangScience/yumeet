@@ -53,7 +53,7 @@ export default async function EventPage({ params, searchParams }: Props) {
     getEventTickets(event.id),
     getEventForms(event.id),
     getEventSchedule(event.id),
-    speakerHighlights(event.id, 8),
+    speakerHighlights(event.id, 60),   // 首页铺完整名录
     event.modules?.archive ? searchAbstracts(event.id, { limit: 1 }) : Promise.resolve(null),
     event.modules?.archive ? listTracks(event.id) : Promise.resolve([]),
   ]);
@@ -118,8 +118,13 @@ export default async function EventPage({ params, searchParams }: Props) {
                 {tt('seeAllSpeakers', { n: speakers.total })}
               </Link>
             </div>
+            {/* 首页列出全部讲者,紧凑名录 —— 「都有谁来」是注册的首要依据,
+                截断到八个人反而把最强的说服力藏起来了 */}
             <SpeakerGrid
+              compact
               locale={locale}
+              moreHref={`${base}/speakers`}
+              total={speakers.total}
               speakers={speakers.rows.map((s) => ({
                 id: s.id, name: s.name, affiliation: s.affiliation,
                 talkTitle: s.talkTitle, photoUrl: s.photoUrl, bio: s.bio,

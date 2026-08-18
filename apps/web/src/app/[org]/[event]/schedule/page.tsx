@@ -143,11 +143,6 @@ export default async function SchedulePage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="面包屑">
-        <Link href={base || "/"}>{event.title}</Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">{tt('schedule')}</span>
-      </nav>
 
       <header className={styles.header}>
         <div className={styles.headerMain}>
