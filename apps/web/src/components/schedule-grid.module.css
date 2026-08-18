@@ -143,9 +143,17 @@
   position: sticky;
   top: var(--sched-nav-h);
   z-index: 3;
-  height: var(--sched-tabs-h);
+  /*
+   * 高度是下限而非定值。
+   *
+   * 窄屏上日期按钮会折行,选中态的蓝框因此比 64px 高 ——
+   * 定死高度时蓝框会顶穿下边线,看起来像画错了位置。
+   * 用 min-height 让这条随内容长高,边线永远落在按钮下方。
+   */
+  min-height: var(--sched-tabs-h);
   display: flex;
   align-items: center;
+  padding-block: var(--yu-space-2);
   background: var(--yu-color-bg-page);
   border-bottom: 1px solid var(--yu-color-hairline);
   margin-inline: calc(var(--yu-space-6) * -1);

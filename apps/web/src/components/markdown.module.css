@@ -120,10 +120,20 @@
 /* object-fit: contain 时,图片实际画在盒子内部并居中,
    圆角裁的是盒子而不是画出来的那块 —— 于是照片的四角仍是直角。
    给它包一层同样圆角并 overflow:hidden 的容器才真正裁得到。 */
+/*
+ * logo 缩到格子里完整显示。
+ *
+ * 之前给了 140px 高又不留内边距,宽高比悬殊的 logo(长条形的 IUPAP、
+ * 方形的校徽)只能顶到格子边缘,视觉上像是被裁了。
+ * 降到 96px 并留出内边距:每个 logo 都缩得下,四周有呼吸,
+ * 一排看过去大小也更齐 —— logo 本来就该小而清楚,不是主角。
+ */
 .logoCell img {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 96px;
+  padding: var(--yu-space-2) var(--yu-space-4);
+  box-sizing: border-box;
   object-fit: contain;
   object-position: center;
   border-radius: var(--yu-radius-card);
