@@ -22,15 +22,24 @@ export function CommitteeList({
   const chairs = members.filter((m) => m.role && /chair/i.test(m.role));
   const rest = members.filter((m) => !(m.role && /chair/i.test(m.role)));
 
+  /*
+   * 按国家分组只在真有国家数据时才做。
+   *
+   * 早先的写法是 `m.country ?? m.affiliation`,于是本地组织委员会
+   * (没有国家、只有单位)被按单位分组,小标题成了 ICRANET、UD'A ——
+   * 看上去像是国家名写错了。缺国家数据时就平铺成一份名单,
+   * 这也更贴合本地委员会的实际:一个城市里的几家机构,本就不需要按国家分。
+   */
+  const withCountry = rest.filter((m) => m.country);
   const byCountry = new Map<string, CommitteeMember[]>();
-  for (const m of rest) {
-    const key = m.country ?? m.affiliation ?? '—';
-    const list = byCountry.get(key) ?? [];
+  for (const m of withCountry) {
+    const list = byCountry.get(m.country!) ?? [];
     list.push(m);
-    byCountry.set(key, list);
+    byCountry.set(m.country!, list);
   }
   const groups = [...byCountry.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const hasCountries = groups.length > 1;
+  // 至少八成的人有国家,分组才有意义;否则大半会落进「其他」
+  const hasCountries = groups.length > 1 && withCountry.length >= rest.length * 0.8;
 
   return (
     <div className={styles.wrap}>
