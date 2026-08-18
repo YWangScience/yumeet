@@ -36,11 +36,20 @@
   text-decoration-thickness: 1px;
 }
 .prose a:hover { text-decoration-thickness: 2px; }
+/* 正文配图:圆角就够了。描一圈发丝线会让每张图都像被装进框里,
+   一页几张图之后,读者看到的是一串框而不是内容。 */
 .prose img {
-  max-width: 100%; height: auto;
+  display: block;
+  max-width: 100%;
+  height: auto;
   border-radius: var(--yu-radius-card);
-  border: 1px solid var(--yu-color-hairline);
-  margin: var(--yu-space-4) 0;
+  margin: var(--yu-space-5) 0;
+}
+
+/* 单独成段的图不受 65ch 正文宽度约束 —— 会场照片、路线图缩到正文宽度就看不清了 */
+.prose p:has(> img:only-child),
+.prose p:has(> a:only-child > img:only-child) {
+  max-width: none;
 }
 .prose ol { margin: var(--yu-space-3) 0; padding-left: var(--yu-space-6); }
 .prose blockquote {
@@ -55,15 +64,20 @@
 }
 .prose h4 { font-size: var(--yu-text-callout-size); font-weight: 600; margin: var(--yu-space-5) 0 var(--yu-space-2); }
 
-/* ── logo 墙 ─────────────────────────────────────────────── */
+/* ── 图片网格 ─────────────────────────────────────────────── */
 /*
- * 赞助方 logo 的宽高比从 1:1 到 16:9 都有,原尺寸铺开就是一堆大小不一的图。
- * 统一成等高格子 + contain,视觉重量才对得齐;白底垫在下面,
- * 是因为不少机构的 logo 是深色透明 PNG,直接压在页面底色上会糊成一团。
+ * 连续多张图(赞助 logo、会场照片)统一成一排等高的图。
+ *
+ * 两件事各自解决:
+ *   「大大小小」—— 靠固定的格子高度,而不是靠裁切;宽高比各异的图
+ *     用 contain 缩进同样高的格子里,视觉重量就对齐了。
+ *   「一堆框」—— 不画边框、不铺白底、不加内边距。圆角与间距已经
+ *     把每张图圈出来了,再描一圈线只会让一排图变成一排框。
+ * 高度取 140px 而非缩略图尺寸:这里有风景照,缩到一百像素就什么都看不清。
  */
 .logoWall {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--yu-space-4);
   margin: var(--yu-space-6) 0;
   padding: 0;
@@ -80,11 +94,9 @@
 
 .logoCell img {
   width: 100%;
-  height: 104px;
+  height: 140px;
   object-fit: contain;
-  padding: var(--yu-space-4);
-  background: #fff;
-  border: 1px solid var(--yu-color-hairline);
+  object-position: center;
   border-radius: var(--yu-radius-card);
   box-sizing: border-box;
 }
@@ -96,7 +108,7 @@
 }
 
 .logoCell a:hover img {
-  border-color: var(--yu-color-accent);
+  opacity: 0.85;
 }
 
 .logoCell a:hover {
@@ -117,4 +129,44 @@
 @media (prefers-reduced-motion: reduce) {
   .logoCell a { transition: none; }
   .logoCell a:hover { transform: none; }
+}
+
+/* ── 「事项:日期」两栏 ─────────────────────────────────────── */
+/*
+ * 重要日期页在原站是一行行「事项:日期」。散段渲染时日期埋在句尾,
+ * 十来条排下来找不到任何一条 —— 而这页存在的唯一目的就是让人快速定位某个截止日。
+ * 拆成两栏后日期自成一列,沿着右边一扫就到底;窄屏叠成两行,仍保持这条对齐关系。
+ */
+.dateRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--yu-space-4);
+  margin: 0;
+  padding: var(--yu-space-3) 0;
+  border-bottom: 1px solid var(--yu-color-hairline);
+  max-width: none;
+}
+
+.dateRow + .dateRow {
+  margin-top: 0;
+}
+
+.dateTerm {
+  color: var(--yu-color-text-primary);
+}
+
+.dateValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--yu-color-text-primary);
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .dateRow {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .dateValue { white-space: normal; }
 }

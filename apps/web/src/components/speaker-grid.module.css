@@ -2,13 +2,15 @@
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: var(--yu-space-4);
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  /* start 而非 stretch:摘要就地展开时只有被点开的那张卡片变高,
-     同排其他人不被一起拉长成一片空白。 */
-  align-items: start;
+  /* 同排卡片等高:报告题目一到四行不等,不拉平就参差得厉害。
+     展开的那张会横跨整行独占一排(见 .cardOpen),所以拉平不会
+     把其他人一起撑高 —— 这正是当初改用 start 想避免的问题。 */
+  align-items: stretch;
 }
 .card, .cardOpen {
   position: relative;
   display: flex; flex-direction: column; gap: var(--yu-space-3);
+  height: 100%;
   background: var(--yu-color-bg-elevated);
   border: 1px solid var(--yu-color-hairline);
   border-radius: var(--yu-radius-card);
@@ -121,6 +123,7 @@
 .hit {
   display: block;
   width: 100%;
+  height: 100%;
   padding: 0;
   border: 0;
   background: transparent;

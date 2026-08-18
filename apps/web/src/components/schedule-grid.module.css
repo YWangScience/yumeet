@@ -5,6 +5,15 @@
   /* 5 分钟一格。16px × 最小 5 格 = 78px,正好装下
      「时间+讲者(至多两行)」与「标题(至多三行)」。 */
   --sched-slot-h: 16px;
+  /*
+   * 无并行时段的格高。
+   *
+   * 按时长等比给高度,只在需要横向比对多个会场时才有意义 ——
+   * 上午只有一个会场在用,把 45 分钟画成 144 高只是把一行字撑开三倍。
+   * 压到 6px/5 分钟:45 分钟得 54px,正好是一条横排卡片的高度,
+   * 时长的长短关系仍然看得出来。
+   */
+  --sched-slot-solo-h: 6px;
   /* 空档里的 5 分钟:压到 1/5。空白仍在、先后仍看得出,
      但整天不会被上午的空场撑成两屏。 */
   --sched-slot-gap-h: 2.6px;
@@ -503,11 +512,40 @@
 }
 
 /* 跨会场项(午餐 / 远足 / 晚宴):横跨整行,横向排布避免留出巨大空白 */
+/*
+ * 横跨整行的卡片。
+ *
+ * 有一整行宽度,就不该再用窄格子那套「三行叠起来」的排法。
+ * 改成一条横向的行:时间在最左(定宽,对齐成一列)、标题占主位、
+ * 讲者与单位跟在后面、会场退到最右。一眼从左扫到右就读完一场,
+ * 这也正是纸质会议手册的排法。
+ */
 .cardWide {
-  flex-direction: row;
+  padding: var(--yu-space-3) var(--yu-space-4);
+  /* 一条横排卡片至少要装下「标题一行 + 标签」 */
+  min-height: 46px;
+}
+
+.cardWide .cardLink {
+  display: grid;
+  grid-template-areas: "time title spk room";
+  grid-template-columns: 92px minmax(0, 1fr) minmax(0, 20rem) auto;
   align-items: center;
-  gap: var(--yu-space-4);
-  padding-inline: var(--yu-space-4);
+  align-content: center;
+  column-gap: var(--yu-space-5);
+  row-gap: 2px;
+}
+
+/* cardBody 在窄卡片里叫 body,横排时它就是标题栏 —— 不重新指派的话
+   它会落到模板外被自动排到末尾,于是标题跑到最右边去了。 */
+.cardWide .cardLink > .cardBody { grid-area: title; }
+.cardWide .cardLink > .cardTime { grid-area: time; }
+.cardWide .cardLink > .speakers { grid-area: spk; }
+
+.cardWide .cardTime {
+  font-size: var(--yu-text-footnote-size);
+  font-weight: 500;
+  color: var(--yu-color-text-primary);
 }
 
 .cardWide .cardBody {
@@ -517,9 +555,12 @@
   gap: var(--yu-space-2) var(--yu-space-3);
 }
 
+/* 全体报告是一天里的重头戏,标题给到正文字号并放开到两行 */
 .cardWide .cardTitle {
-  font-size: var(--yu-text-callout-size);
-  letter-spacing: var(--yu-text-callout-tracking);
+  font-size: var(--yu-text-body-size);
+  font-weight: 600;
+  letter-spacing: var(--yu-text-body-tracking);
+  line-height: 1.35;
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
@@ -531,6 +572,44 @@
 
 .cardWide .speakers {
   margin: 0;
+  text-align: left;
+}
+
+.cardWide .speakerName {
+  font-size: var(--yu-text-callout-size);
+  color: var(--yu-color-text-primary);
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.cardWide .speakerAff {
+  display: block;
+  font-size: var(--yu-text-footnote-size);
+  line-height: 1.35;
+  color: var(--yu-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 次要灰(#6e6e73)在白底上够,压到 keynote 的浅蓝底上只剩 4.43:1。
+   这类「同一个次要色配多种卡片底色」的组合,必须按最浅的那种底色定色,
+   否则总有一档不达标。混入 45% 的主文字色后在两种底上都过 4.5:1。 */
+.cardRoom {
+  grid-area: room;
+  align-self: center;
+  font-size: var(--yu-text-caption-size);
+  color: color-mix(in srgb, var(--yu-color-text-primary) 45%, var(--yu-color-text-secondary));
+  white-space: nowrap;
+}
+
+/* 窄屏放不下四栏,叠成两行 */
+@media (max-width: 1100px) {
+  .cardWide .cardLink {
+    grid-template-areas: "time title" "spk room";
+    grid-template-columns: 92px minmax(0, 1fr);
+    column-gap: var(--yu-space-4);
+  }
 }
 
 /* ------------------------------------------------------- kind 视觉分档(共用) */

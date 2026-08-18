@@ -115,7 +115,7 @@ export default async function EventLayout({ children, params }: Props) {
    * 让人点开一个菜单只为看到里面孤零零一项,是纯粹的浪费。
    */
   const ORDER: NavSection[] = [
-    'schedule', 'program', 'talks', 'speakers', 'committee', 'award', 'events', 'about',
+    'program', 'schedule', 'talks', 'speakers', 'committee', 'award', 'events', 'about',
   ];
   const navEntries: NavEntry[] = [];
 

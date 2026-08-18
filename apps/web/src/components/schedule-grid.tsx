@@ -119,6 +119,8 @@ interface Placed {
   rowEnd: number;
   /** -1 表示跨会场,横跨整行 */
   colIndex: number;
+  /** 因为无并行而横跨整行时,原本所属的会场(仍要显示,只是不再占一列) */
+  soloRoom?: { id: string; name: string; location?: string | null } | null;
 }
 
 interface Layout {
@@ -127,6 +129,10 @@ interface Layout {
   ticks: { key: string; row: number; label: string }[];
   /** 逐行标记:该 5 分钟行是否位于被压缩的空档内 */
   compressed?: boolean[];
+  /** 有并行会场的行区间,列线只画在这些区间上 */
+  colBands?: { start: number; span: number }[];
+  /** 有内容但无并行的行:用压缩格高 */
+  soloRows?: boolean[];
   placed: Placed[];
   firstMs: number;
   lastMs: number;
@@ -148,7 +154,7 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     lastMs = Math.max(lastMs, Date.parse(s.end));
   }
   if (!Number.isFinite(firstMs) || !Number.isFinite(lastMs)) {
-    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [] };
+    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [], colBands: [], soloRows: [] };
   }
 
   const gridStart = Math.floor(firstMs / SNAP_MS) * SNAP_MS;
@@ -164,7 +170,7 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     ticks.push({ key: String(t), row: rowOf(t), label });
   }
 
-  const placed = day.sessions.map((session): Placed => {
+  const placedRaw = day.sessions.map((session): Placed => {
     const startMs = Date.parse(session.start);
     const endMs = Date.parse(session.end);
     const rowStart = rowOf(startMs);
@@ -179,6 +185,26 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
       rowEnd,
       colIndex: room ? colOf.get(room.id) ?? -1 : -1,
     };
+  });
+
+  /*
+   * 「无并行」的场次横跨整行。
+   *
+   * 这个会议(以及多数会议)的一天是「上午全体大会 + 下午平行分会」。
+   * 六列网格是按下午画的,到了上午就变成一列内容配五列空白 ——
+   * 屏幕上九成是空网格,而唯一那张卡片还被压在六分之一的宽度里,
+   * 标题要折三行才放得下。
+   *
+   * 判据不是「有没有 roomId」,而是「这个时间区间里别的会场是不是真的空着」。
+   * 空着就没有对齐的必要,把整行让给它:标题一行放得下,讲者与单位也回来了。
+   */
+  const placed = placedRaw.map((p): Placed => {
+    if (p.colIndex < 0) return p;
+    const overlapsOther = placedRaw.some((q) => (
+      q !== p && q.colIndex >= 0 && q.colIndex !== p.colIndex
+      && q.rowStart < p.rowEnd && p.rowStart < q.rowEnd
+    ));
+    return overlapsOther ? p : { ...p, colIndex: -1, soloRoom: p.room };
   });
 
   /*
@@ -210,7 +236,37 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     for (let k = rows + 2 - run + 1; k <= rows; k++) compressed[k] = true;
   }
 
-  return { dayRooms, rows, ticks, placed, firstMs, lastMs, compressed };
+  /*
+   * 列线只画在真正有并行的时段。
+   *
+   * 上午只有一个会场在用时,六条竖线划出的五个空栏并不表达任何信息 ——
+   * 它们只是把「这里什么都没有」画了五遍。把列线切成若干段,
+   * 跟着并行时段出现和消失,版面就跟着会议的结构走。
+   */
+  const parallel = new Array<boolean>(rows + 2).fill(false);
+  for (const p of placed) {
+    if (p.colIndex < 0) continue;
+    for (let r = p.rowStart; r < p.rowEnd; r++) parallel[r] = true;
+  }
+  // 有内容但没有并行的行:格高可以压,不必按时长等比
+  const soloRows = new Array<boolean>(rows + 2).fill(false);
+  for (const p of placed) {
+    if (p.colIndex >= 0) continue;
+    for (let r = p.rowStart; r < p.rowEnd; r++) soloRows[r] = true;
+  }
+  for (let r = 1; r <= rows + 1; r++) if (parallel[r]) soloRows[r] = false;
+
+  const colBands: { start: number; span: number }[] = [];
+  let bandStart = 0;
+  for (let r = 1; r <= rows + 1; r++) {
+    if (parallel[r] && bandStart === 0) bandStart = r;
+    if ((!parallel[r] || r === rows + 1) && bandStart !== 0) {
+      colBands.push({ start: bandStart, span: r - bandStart });
+      bandStart = 0;
+    }
+  }
+
+  return { dayRooms, rows, ticks, placed, firstMs, lastMs, compressed, colBands, soloRows };
 }
 
 export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
@@ -292,14 +348,25 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
   // 逐行高度:普通行取 --sched-slot-h,空档内的行取压缩高度。
   // 把连续同高的行合成 repeat(n, h),避免生成上百段的超长声明。
   const rowTemplate = (() => {
-    const flags = layout.compressed ?? [];
+    const gap = layout.compressed ?? [];
+    const solo = layout.soloRows ?? [];
+    // 三档行高:空档最矮、无并行时段其次、有并行的时段用完整格高
+    const tierOf = (r: number) =>
+      gap[r] ? 'gap' : (solo[r] ? 'solo' : 'full');
+    // 无并行的行用 minmax(…, auto):标题折成两行时这一行跟着长高,
+    // 而不是把字裁掉。有并行的行必须严格等比,否则各会场对不齐。
+    const size: Record<string, string> = {
+      gap: 'var(--sched-slot-gap-h)',
+      solo: 'minmax(var(--sched-slot-solo-h), auto)',
+      full: 'var(--sched-slot-h)',
+    };
     const parts: string[] = [];
     let i = 1;
     while (i <= layout.rows) {
-      const c = flags[i] === true;
+      const t = tierOf(i);
       let n = 0;
-      while (i + n <= layout.rows && (flags[i + n] === true) === c) n++;
-      parts.push(`repeat(${n}, var(${c ? '--sched-slot-gap-h' : '--sched-slot-h'}))`);
+      while (i + n <= layout.rows && tierOf(i + n) === t) n++;
+      parts.push(`repeat(${n}, ${size[t]})`);
       i += n;
     }
     return parts.join(' ');
@@ -424,14 +491,16 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
               aria-hidden="true"
               style={{ gridColumn: '1 / -1', gridRow: `1 / span ${layout.rows}` }}
             />
-            {layout.dayRooms.map((r, i) => (
-              <div
-                key={`line-${r.id}`}
-                className={styles.colLine}
-                aria-hidden="true"
-                style={{ gridColumn: i + 2, gridRow: `1 / span ${layout.rows}` }}
-              />
-            ))}
+            {(layout.colBands ?? []).flatMap((band) =>
+              layout.dayRooms.map((r, i) => (
+                <div
+                  key={`line-${r.id}-${band.start}`}
+                  className={styles.colLine}
+                  aria-hidden="true"
+                  style={{ gridColumn: i + 2, gridRow: `${band.start} / span ${band.span}` }}
+                />
+              )),
+            )}
             {layout.ticks.map((t) => (
               <div
                 key={t.key}
@@ -443,7 +512,7 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
               </div>
             ))}
 
-            {layout.placed.map(({ session, room, rowStart, rowEnd, colIndex }) => {
+            {layout.placed.map(({ session, room, rowStart, rowEnd, colIndex, soloRoom }) => {
               const wide = colIndex < 0;
               const span = rowEnd - rowStart;
               const shift = dayDiff(dayKeyIn(Date.parse(session.start), timeZone), day.day);
@@ -469,7 +538,8 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
               const inner = (
                 <>
                   {/* 时间与讲者是同级信息,放在一行:短卡片里这样能省下整整一行,
-                      让标题保住两行 —— 22 分钟的报告只有六十来像素可用。 */}
+                      让标题保住两行 —— 22 分钟的报告只有六十来像素可用。
+                      横跨整行的卡片不缺空间,会把单位与会场也补上(见 .cardWide)。 */}
                   <p className={styles.cardTime}>
                     <time dateTime={session.start}>{formatTime(new Date(session.start), timeZone)}</time>
                     <span className={styles.timeSep} aria-hidden="true">–</span>
@@ -490,12 +560,21 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                           </span>
                         )}
                       </span>
+                      {wide && session.speakers[0].affiliation && (
+                        <span className={styles.speakerAff}>
+                          {session.speakers[0].affiliation}
+                        </span>
+                      )}
                     </p>
                   )}
                   <div className={styles.cardBody}>
                     {kicker && <span className={styles.kicker}>{kicker}</span>}
                     <h3 className={styles.cardTitle}>{session.title}</h3>
                   </div>
+                  {/* 独占整行时会场名不再由列头表达,补一枚小标签 */}
+                  {wide && soloRoom && (
+                    <span className={styles.cardRoom}>{soloRoom.name}</span>
+                  )}
                   <span className={styles.srOnly}>
                     {room ? (locale === 'zh' ? `会场:${room.name}` : `Room: ${room.name}`)
                       : (locale === 'zh' ? '全体活动,不限会场' : 'All-venue session')}

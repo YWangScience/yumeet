@@ -70,6 +70,26 @@ export function Markdown({ source }: { source: string }) {
 
   const flushLogos = () => {
     if (!logos.length) return;
+    /*
+     * 只有连续三张以上才当成 logo 墙。
+     *
+     * 一两张图更可能是正文的配图(会场照片、路线图),
+     * 把它们塞进 180px 的等高格子里,等于把一张会场照片缩成缩略图 ——
+     * 这不是「排整齐」,是把内容弄丢了。正文配图按原样走 <p><img>,
+     * 由 .prose 给它一个圆角和自适应宽度即可。
+     */
+    if (logos.length < 3) {
+      for (const l of logos) {
+        const img = `<img src="${l.src}" alt="${l.alt}" loading="lazy" />`;
+        const inner = l.href
+          ? `<a href="${l.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
+          : img;
+        blocks.push(`<p>${inner}</p>`);
+        if (l.caption) blocks.push(`<p>${inline(l.caption)}</p>`);
+      }
+      logos = [];
+      return;
+    }
     const cells = logos.map((l) => {
       const img = `<img src="${l.src}" alt="${l.alt}" loading="lazy" />`;
       const inner = l.href
@@ -108,6 +128,44 @@ export function Markdown({ source }: { source: string }) {
         }
       }
       flushLogos();
+
+      /*
+       * 「事项:日期」这样的一行,是会议重要日期页的通用写法。
+       * 原样渲染就是一串各自为政的段落 —— 读者想知道的是
+       * 「哪些节点、分别在什么时候、哪些已经过去了」,而这三件事
+       * 在散段里都要靠自己拼。拆成左右两栏后,日期自动对齐成一列,
+       * 眼睛沿着一条边就能扫完。
+       */
+      /*
+       * 切分点必须避开链接里的冒号。
+       *
+       * 事项本身常带 Markdown 链接(「Opening of [registration](https://…):10 March」),
+       * 从第一个冒号切会切在 `https:` 上,把 URL 的后半截当成日期。
+       * 所以先把 [文字](链接) 整体遮成占位符再找冒号,拿到位置后回原串切 ——
+       * 遮罩与原串等长,下标可以直接对应。
+       */
+      const masked = joined.replace(
+        /\[[^\]]*\]\([^)\s]*\)/g,
+        (m) => '\u0000'.repeat(m.length),
+      );
+      const at = masked.search(/[::]/);
+      const term = at > 1 ? joined.slice(0, at).trim() : '';
+      const value = at > 1 ? joined.slice(at + 1).trim() : '';
+      // 长度按「渲染后看到的字数」算,不按源码字数 ——
+      // 一条 48 字符的 URL 会把「Opening of registration」这样的短事项顶出上限。
+      const shown = (t: string) => t.replace(/\[([^\]]*)\]\([^)\s]*\)/g, '$1').length;
+      if (term.length >= 2 && shown(term) <= 70
+          && value.length >= 2 && shown(value) <= 80) {
+        blocks.push(
+          `<p class="${styles.dateRow}">`
+          + `<span class="${styles.dateTerm}">${inline(term)}</span>`
+          + `<span class="${styles.dateValue}">${inline(value)}</span>`
+          + '</p>',
+        );
+        para = [];
+        return;
+      }
+
       blocks.push(`<p>${inline(joined)}</p>`);
       para = [];
     }
