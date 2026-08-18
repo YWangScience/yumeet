@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { NavEntry, NavLink } from './site-nav';
 import styles from './mobile-nav.module.css';
@@ -21,6 +22,9 @@ interface Props {
  */
 export function MobileNav({ label, entries, cta }: Props) {
   const [open, setOpen] = useState(false);
+  // 服务端渲染时没有 document,水合完成后才创建 portal
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const panelId = useId();
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -63,7 +67,16 @@ export function MobileNav({ label, entries, cta }: Props) {
         <span className={open ? styles.barsOpen : styles.bars} aria-hidden="true" />
       </button>
 
-      {open && (
+      {/*
+        * 抽屉挂到 <body> 上,而不是留在导航条里面。
+        *
+        * 顶栏有 backdrop-filter(毛玻璃),这会让它成为 position: fixed 的
+        * 包含块 —— 抽屉的 top/bottom 于是相对那条 48px 高的导航条计算,
+        * 面板被压成 60px 高,一千多像素的菜单只露出最上面一点。
+        * 这类「祖先带 filter / transform / backdrop-filter」的陷阱,
+        * 靠调 z-index 或 height 都绕不过去,必须让元素脱离那个包含块。
+        */}
+      {open && mounted && createPortal(
         <>
           <div className={styles.scrim} onClick={() => setOpen(false)} aria-hidden="true" />
           <div className={styles.panel} id={panelId} ref={panelRef} role="dialog" aria-modal="true" aria-label={label}>
@@ -103,7 +116,8 @@ export function MobileNav({ label, entries, cta }: Props) {
               )}
             </nav>
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </>
   );
