@@ -81,12 +81,20 @@ const read = <T>(f: string): T =>
  */
 function isPhoto(buf: Buffer): boolean {
   const hex = buf.subarray(0, 4).toString('hex');
-  if (hex.startsWith('ffd8ff')) return true;              // JPEG:没有透明通道
-  if (hex.startsWith('89504e47')) {
-    // PNG 的 IHDR 固定在偏移 25 处放 colour type:4 与 6 含 alpha
-    const colourType = buf[25];
-    return colourType !== 4 && colourType !== 6;
-  }
+  // JPEG 没有透明通道,几乎总是照片
+  if (hex.startsWith('ffd8ff')) return true;
+  /*
+   * PNG 一律按标志处理。
+   *
+   * 先前的判据是「不含 alpha 通道的 PNG 视为照片」,结果 ICRANet 与
+   * 市政府的徽标(白底、无透明通道的 PNG)被当成照片,塞进 200px 的
+   * 照片格子里,一排 logo 高矮不齐。
+   *
+   * 现实里的分布很清楚:照片来自相机,存成 JPEG;徽标来自矢量导出,
+   * 存成 PNG —— 有没有 alpha 只取决于导出时是否勾了透明背景,
+   * 与它是不是照片无关。误判的代价也不对称:照片当 logo 只是小一点,
+   * logo 当照片会被 cover 裁掉边角。
+   */
   return false;
 }
 
@@ -330,7 +338,16 @@ async function main() {
   await db.insert(eventPages).values(pages.map((p) => {
     const nav = NAV_GROUP[p.slug] ?? { group: 'about', pos: 90 };
     const zh = PAGE_TITLE_ZH[p.slug];
-    const zhBody = PAGE_BODY_ZH[p.slug];
+    /*
+     * 中文正文也要过一遍图片改写。
+     *
+     * 译文里写的是 Indico 的原始地址;不改写就有两处后果:
+     * 一是仍然外链到原站,二是拿不到「照片 / 标志」的类型标注 ——
+     * 会场照片于是被当成 logo 塞进 96px 的小格子里。
+     */
+    const zhBody = PAGE_BODY_ZH[p.slug]
+      ? rewriteImages({ ...p, body: PAGE_BODY_ZH[p.slug]! })
+      : undefined;
     // 「Confirmed plenary speakers」与 /speakers 是同一批人,
     // 但这份是 Indico 的原始导出:姓名、报告题目、摘要连成一段斜体,
     // 一万六千像素长。结构化的那份已经在讲者页,这份不进导航(仍可直达,
