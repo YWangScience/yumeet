@@ -489,13 +489,24 @@ async function main() {
       title: 'Registration & Coffee',
       startsAt: rome(d, 8, 0), endsAt: rome(d, 9, 0), speakers: [],
     });
-    for (let k = 0; k < 4 && pi < plenary.length; k++, pi++) {
+    /*
+     * 每天的全体报告数按总数均摊,而不是写死 4 场。
+     *
+     * 写死 4 场时,41 篇全体报告只排得下 24 篇 —— 剩下 17 篇在日程上
+     * 查不到,摘要列表里也就显示不出时间与会场。
+     * 上午的窗口是 09:00–13:00 共四小时。41 篇均摊到六天是每天七场,
+     * 四小时装七场,每场只能给 34 分钟(30 分钟报告 + 4 分钟换场)——
+     * 这也符合实际:全体大会日程紧,报告本就短。
+     */
+    const perDay = Math.ceil(plenary.length / days.length);
+    for (let k = 0; k < perDay && pi < plenary.length; k++, pi++) {
       const a = plenary[pi]!;
       rows.push({
         eventId: event!.id, roomId: hall!.id, kind: 'keynote',
         submissionId: submissionByContribution.get(a.contributionId) ?? null,
         title: a.title,
-        startsAt: rome(d, 9 + k, 0), endsAt: rome(d, 9 + k, 45),
+        // 09:00 起,每 34 分钟一场;七场排到 12:52,在 13:00 午餐前收尾
+        startsAt: rome(d, 9, k * 34), endsAt: rome(d, 9, k * 34 + 30),
         speakers: a.authors
           .filter((au) => looksLikeName(tidyName(au.name)))
           .slice(0, 2)
