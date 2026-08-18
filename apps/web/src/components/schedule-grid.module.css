@@ -16,11 +16,11 @@
    *
    * 按时长等比给高度,只在需要横向比对多个会场时才有意义 ——
    * 上午只有一个会场在用,把 45 分钟画成 144 高只是把一行字撑开三倍。
-   * 压到 3px/5 分钟:45 分钟得 27px,配合 minmax(…, auto) 由内容决定实际高度,
-   * 于是卡片贴着自己的内容走,场与场之间不再留出大片空白。
-   * 上午八九场全体报告,每场省下几十像素,加起来就是少滚一屏。
+   * 压到 1.6px/5 分钟:高度基本交给 minmax(…, auto) 里的内容决定,
+   * 时段本身只贡献很小的一点差值 —— 单会场时段没有横向对齐的需求,
+   * 严格等比只会在每两条之间留下大片空白。
    */
-  --sched-slot-solo-h: 3px;
+  --sched-slot-solo-h: 1.6px;
   /* 空档里的 5 分钟:压到极窄。空白仍在、先后仍看得出,
      但整天不会被上午的空场撑成两屏。 */
   --sched-slot-gap-h: 1.6px;
@@ -327,9 +327,11 @@
   border-left: 0;
 }
 
+/* 整点不画横线:左侧刻度已经把时间标出来了,再横穿一条只是把表格
+   切成一格格。刻度与卡片自身的位置足够定位「几点」。 */
 .tick {
   z-index: 0;
-  border-top: 1px solid color-mix(in srgb, var(--yu-color-hairline) 40%, transparent);
+  border-top: 0;
   pointer-events: none;
 }
 
@@ -560,8 +562,9 @@
  */
 .cardWide {
   padding: var(--yu-space-2) var(--yu-space-4);
-  /* 一条横排卡片至少要装下「标题一行 + 标签」 */
-  min-height: 38px;
+  /* 一条表格行的最小高度 */
+  min-height: 34px;
+  margin-bottom: 2px;
 }
 
 .cardWide .cardLink {
@@ -670,14 +673,22 @@
   border-top: 1px solid transparent;
 }
 
+/*
+ * 全体大会不再套蓝色卡片。
+ *
+ * 它已经独占一整行、有自己的时间列与讲者列 —— 那就是一条表格行,
+ * 再给它铺一层蓝底加左侧色条,等于把一行字装进一个色块里,
+ * 一屏八九条排下来是八九个蓝盒子。去掉底色后信息一点没少,
+ * 版面回到一份可以从上往下读的名录。
+ */
 .kind_keynote {
-  background: color-mix(in srgb, var(--yu-color-accent) 10%, var(--yu-color-bg-elevated));
-  box-shadow: inset 3px 0 0 var(--yu-color-accent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .kind_keynote:hover {
-  box-shadow: inset 3px 0 0 var(--yu-color-accent),
-              0 2px 10px rgba(0, 0, 0, 0.06);
+  background: var(--yu-color-bg-section);
+  box-shadow: none;
 }
 
 .kind_keynote .cardTitle,

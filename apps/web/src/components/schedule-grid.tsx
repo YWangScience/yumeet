@@ -135,6 +135,8 @@ interface Layout {
   colBands?: { start: number; span: number }[];
   /** 有内容但无并行的行:用压缩格高 */
   soloRows?: boolean[];
+  /** 有内容但无并行的整段区间,吸顶行在这里只写主会场 */
+  soloBands?: { start: number; span: number }[];
   placed: Placed[];
   firstMs: number;
   lastMs: number;
@@ -156,7 +158,7 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     lastMs = Math.max(lastMs, Date.parse(s.end));
   }
   if (!Number.isFinite(firstMs) || !Number.isFinite(lastMs)) {
-    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [], colBands: [], soloRows: [] };
+    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [], colBands: [], soloRows: [], soloBands: [] };
   }
 
   const gridStart = Math.floor(firstMs / SNAP_MS) * SNAP_MS;
@@ -225,14 +227,21 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
   for (const p of placed) {
     for (let r = p.rowStart; r < p.rowEnd; r++) busy[r] = true;
   }
-  const GAP_MIN_ROWS = 6;          // 30 分钟
+  /*
+   * 30 分钟以上的空档压缩。
+   *
+   * 阈值原本是 6 格(30 分钟),但全体大会每场之间只隔十几分钟,
+   * 达不到阈值,于是那段空白按原比例画出来 —— 一屏里每两条报告之间
+   * 都空出小半屏。把阈值降到 2 格(10 分钟):换场的空当没有阅读价值,
+   * 留一点点示意先后即可。
+   */
+  const GAP_MIN_ROWS = 2;
   const compressed = new Array<boolean>(rows + 2).fill(false);
   let run = 0;
   for (let r = 1; r <= rows + 1; r++) {
     if (!busy[r]) { run++; continue; }
     if (run >= GAP_MIN_ROWS) {
-      // 两端各留一格,免得卡片紧贴压缩带显得被切断
-      for (let k = r - run + 1; k < r - 1; k++) compressed[k] = true;
+      for (let k = r - run + 1; k < r; k++) compressed[k] = true;
     }
     run = 0;
   }
@@ -276,6 +285,38 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
       bandStart = 0;
     }
   }
+  /*
+   * 无并行但有内容的区间(上午的全体大会)。
+   * 吸顶行在这里也要出现,只是只写主会场 —— 读者滚到一半时同样需要
+   * 知道「现在看的是哪个厅」,不能因为只有一个厅就不告诉他。
+   */
+  const rawSolo: { start: number; span: number }[] = [];
+  let sStart = 0;
+  for (let r = 1; r <= rows + 1; r++) {
+    const on = soloRows[r] === true;
+    if (on && sStart === 0) sStart = r;
+    if ((!on || r === rows + 1) && sStart !== 0) {
+      rawSolo.push({ start: sStart, span: r - sStart });
+      sStart = 0;
+    }
+  }
+  /*
+   * 与并行段同理:两场全体报告之间隔着十几分钟,若照此断开,
+   * 一个上午会被切成五六段,每段只有几十像素高 —— 吸顶行永远够不到
+   * 「顶部已滚过、底部还没上来」的条件,于是整个上午都不出现。
+   * 间隔在一小时以内的并作一段。
+   */
+  const SOLO_JOIN_ROWS = 12;
+  const soloBands: { start: number; span: number }[] = [];
+  for (const b of rawSolo) {
+    const prev = soloBands[soloBands.length - 1];
+    if (prev && b.start - (prev.start + prev.span) <= SOLO_JOIN_ROWS) {
+      prev.span = b.start + b.span - prev.start;
+    } else {
+      soloBands.push({ ...b });
+    }
+  }
+
   const colBands: { start: number; span: number }[] = [];
   for (const b of rawBands) {
     const prev = colBands[colBands.length - 1];
@@ -286,7 +327,9 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     }
   }
 
-  return { dayRooms, rows, ticks, placed, firstMs, lastMs, compressed, colBands, soloRows };
+  return {
+    dayRooms, rows, ticks, placed, firstMs, lastMs, compressed, colBands, soloRows, soloBands,
+  };
 }
 
 export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
@@ -297,7 +340,8 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const [stuck, setStuck] = useState(false);
+  /** 吸顶行当前该显示哪一套列名:全部会场 / 只有主会场 / 不显示 */
+  const [stuck, setStuck] = useState<'none' | 'solo' | 'parallel'>('none');
 
   /*
    * 判断吸顶栏该不该出现:看吸顶线(顶栏下沿)是否落在某段并行区间内,
@@ -316,13 +360,16 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
       const tabsH = parseFloat(cs?.getPropertyValue('--sched-tabs-h') || '64') || 64;
       const line = navH + tabsH;
       const ranges = el.querySelectorAll<HTMLElement>('[data-band-range]');
-      let inside = false;
+      let mode: 'none' | 'solo' | 'parallel' = 'none';
       for (const r of ranges) {
         const b = r.getBoundingClientRect();
         // 该段顶部已滚过吸顶线,且底部还没上来
-        if (b.top < line - 40 && b.bottom > line + 40) { inside = true; break; }
+        if (b.top < line - 24 && b.bottom > line + 24) {
+          mode = r.dataset['bandRange'] === 'solo' ? 'solo' : 'parallel';
+          break;
+        }
       }
-      setStuck(inside);
+      setStuck(mode);
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure); };
     measure();
@@ -534,12 +581,17 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
             * 塞进网格首行,于是每段并行的第一排报告都被盖掉半截。
             */}
           <div
-            className={stuck ? styles.roomHeadStuck : styles.roomHeadStuckHidden}
-            style={cssVars({ gridTemplateColumns: template })}
+            className={stuck === 'none' ? styles.roomHeadStuckHidden : styles.roomHeadStuck}
+            style={cssVars({
+              // 单会场时段只有一列内容,列模板跟着换,列名才落在对的位置
+              gridTemplateColumns: stuck === 'solo'
+                ? `var(--sched-gutter) minmax(0, 1fr)`
+                : template,
+            })}
             aria-hidden="true"
           >
             <span className={styles.roomHeadGutter} />
-            {layout.dayRooms.map((r) => (
+            {(stuck === 'solo' ? layout.dayRooms.slice(0, 1) : layout.dayRooms).map((r) => (
               <span key={r.id} className={styles.roomHeadCell}>
                 <span className={styles.roomHeadName}>{r.name}</span>
               </span>
@@ -577,7 +629,16 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
             {(layout.colBands ?? []).map((band) => (
               <div
                 key={`range-${band.start}`}
-                data-band-range=""
+                data-band-range="parallel"
+                aria-hidden="true"
+                className={styles.bandRange}
+                style={{ gridColumn: '1 / -1', gridRow: `${band.start} / span ${band.span}` }}
+              />
+            ))}
+            {(layout.soloBands ?? []).map((band) => (
+              <div
+                key={`solo-range-${band.start}`}
+                data-band-range="solo"
                 aria-hidden="true"
                 className={styles.bandRange}
                 style={{ gridColumn: '1 / -1', gridRow: `${band.start} / span ${band.span}` }}
@@ -703,7 +764,9 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                     </p>
                   )}
                   <div className={styles.cardBody}>
-                    {kicker && <span className={styles.kicker}>{kicker}</span>}
+                    {/* 横排的整行卡片不挂类型标签:它所在的时段本来就只有主会场,
+                        「全体大会」四个字在每一行重复一遍并不带来新信息 */}
+                    {kicker && !wide && <span className={styles.kicker}>{kicker}</span>}
                     <h3 className={styles.cardTitle}>{session.title}</h3>
                   </div>
                   {/* 独占整行时会场名不再由列头表达,补一枚小标签 */}
