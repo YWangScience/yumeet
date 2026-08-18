@@ -359,17 +359,27 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
       const navH = parseFloat(cs?.getPropertyValue('--sched-nav-h') || '48') || 48;
       const tabsH = parseFloat(cs?.getPropertyValue('--sched-tabs-h') || '64') || 64;
       const line = navH + tabsH;
-      const ranges = el.querySelectorAll<HTMLElement>('[data-band-range]');
-      let mode: 'none' | 'solo' | 'parallel' = 'none';
-      for (const r of ranges) {
-        const b = r.getBoundingClientRect();
-        // 该段顶部已滚过吸顶线,且底部还没上来
-        if (b.top < line - 24 && b.bottom > line + 24) {
-          mode = r.dataset['bandRange'] === 'solo' ? 'solo' : 'parallel';
-          break;
-        }
-      }
-      setStuck(mode);
+      /*
+       * 列名现在只此一处,所以不能只在「滚进某段」时才出现 ——
+       * 页面刚打开、还没滚动时同样要说清楚这些报告在哪个厅。
+       *
+       * 规则:吸顶线落在哪一段里就显示那一段的列名;
+       * 还没滚到任何一段时,显示最靠前那一段的 —— 它就是接下来要读的内容。
+       */
+      const ranges = [...el.querySelectorAll<HTMLElement>('[data-band-range]')]
+        .map((r) => ({ el: r, box: r.getBoundingClientRect() }))
+        .sort((a, b) => a.box.top - b.box.top);
+      if (ranges.length === 0) { setStuck('none'); return; }
+
+      const kindOf = (r: HTMLElement) =>
+        (r.dataset['bandRange'] === 'solo' ? 'solo' : 'parallel') as 'solo' | 'parallel';
+
+      const hit = ranges.find((r) => r.box.top < line - 24 && r.box.bottom > line + 24);
+      if (hit) { setStuck(kindOf(hit.el)); return; }
+
+      // 整张表都还在下方(或已全部滚过)时,跟着最近的一段走
+      const ahead = ranges.find((r) => r.box.top >= line - 24);
+      setStuck(kindOf((ahead ?? ranges[ranges.length - 1]!).el));
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure); };
     measure();
@@ -597,23 +607,6 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
               </span>
             ))}
           </div>
-          {/*
-            * 上午没有并行,但主会场是在用的 —— 全体大会就在那里开。
-            * 先在网格上方放一行「只写主会场」的表头,读者一开始就知道
-            * 这些报告在哪个厅;其余会场的列名留到下午真正分栏时再出现。
-            * 放在网格之外而不是挤进首行:挤进去会压住第一张卡片。
-            */}
-          {(layout.colBands?.[0]?.start ?? 2) > 2 && layout.dayRooms[0] && (
-            <div className={styles.roomHeadSolo} aria-hidden="true">
-              <span className={styles.roomHeadGutter} />
-              <span className={styles.roomHeadCell}>
-                <span className={styles.roomHeadName}>{layout.dayRooms[0].name}</span>
-                {layout.dayRooms[0].location && (
-                  <span className={styles.roomHeadLoc}>{layout.dayRooms[0].location}</span>
-                )}
-              </span>
-            </div>
-          )}
           <div
             className={styles.grid}
             role="list"
@@ -657,46 +650,16 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
             )}
 
             {/*
-              * 会场表头贴在每段并行区间的开头,而不是整天最上方。
+              * 网格内不再放会场表头。
               *
-              * 上午只有一个会场在用,那排列名头上没有任何对应的列 ——
-              * 读者要先看六个会场名,再往下翻两屏才遇到第一个分栏。
-              * 把它挪到分栏真正开始的地方,列名与列就对上了;
-              * 一天里若有多段并行(上下午各一场),每段各自带一行表头。
+              * 它排在并行区间的起始行,而那一行同时也是第一批报告的位置 ——
+              * 六个列名里有五个被卡片压在下面,只有下午空着的主会场那列露得出来,
+              * 于是看上去像是「Lunch 下面多了一行主会场」。
+              *
+              * 列名改由吸顶行独家负责:它是浮层,不与任何卡片抢位置,
+              * 而且会随所处时段在「只有主会场」与「全部会场」之间切换。
+              * 一处说清楚,好过两处各说一半。
               */}
-            {/*
-              * 上午那段没有并行,但主会场是在用的 —— 全体大会就在那里开。
-              * 所以在整天最上方先放一行「只写主会场」的表头,
-              * 让读者一开始就知道这些报告在哪个厅;其余会场的列名
-              * 留到下午真正分栏时再出现(见下面按 band 渲染的那组)。
-              */}
-            {/* 占位:让首行空出表头的高度,卡片从表头下方开始 */}
-            {(layout.colBands ?? []).map((band) => (
-              <div
-                key={`head-${band.start}`}
-                className={styles.roomHead}
-                /*
-                 * 表头横跨整行、占住区间开头的几格,卡片从它下方开始。
-                 * 列模板必须显式复用整表的 —— 它自己是一个 grid item,
-                 * subgrid 在跨行的 item 上拿不到父级列宽,只画得出第一列,
-                 * 六个会场名于是竖着叠成一摞。
-                 */
-                style={cssVars({
-                  gridColumn: '1 / -1',
-                  gridRow: `${band.start} / span 3`,
-                  gridTemplateColumns: template,
-                })}
-                aria-hidden="true"
-              >
-                <span className={styles.roomHeadGutter} />
-                {layout.dayRooms.map((r) => (
-                  <span key={r.id} className={styles.roomHeadCell}>
-                    <span className={styles.roomHeadName}>{r.name}</span>
-                    {r.location && <span className={styles.roomHeadLoc}>{r.location}</span>}
-                  </span>
-                ))}
-              </div>
-            ))}
             {layout.ticks.map((t) => (
               <div
                 key={t.key}
