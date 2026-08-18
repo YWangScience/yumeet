@@ -85,6 +85,37 @@ const NAV_GROUP: Record<string, { group: string; pos: number }> = {
   'proceedings': { group: 'about', pos: 26 },
 };
 
+/**
+ * 页面标题的中文名。
+ *
+ * 页面正文是 Indico 上的英文原文,属于会议的历史记录,不做机器翻译 ——
+ * 但导航与页首标题是界面的一部分,中文版里挂着一排英文条目,
+ * 语言开关就只切了一半。专有名词照旧保留:MG awards 里的 MG、
+ * ICRANet、Marcel Grossmann 都是名字,不译。
+ */
+const PAGE_TITLE_ZH: Record<string, string> = {
+  'scientific-objectives': '科学目标',
+  'important-dates': '重要日期',
+  'mg-awards': 'MG 奖项',
+  'plenary-speakers': '特邀报告人',
+  'public-lectures': '公众讲座',
+  'chairperson-instructions': '分会主席须知',
+  'general-information': '会务须知',
+  'location': '会场位置',
+  'accommodation': '住宿',
+  'transportation': '交通',
+  'wireless': '无线网络',
+  'organizing-committees': '组织委员会',
+  'ioc': '国际组织委员会',
+  'icc': '国际协调委员会',
+  'loc': '本地组织委员会',
+  'exhibitions': '展览',
+  'sponsors': '赞助',
+  'social-events': '社交活动',
+  'group-photo': '合影',
+  'proceedings': '会议论文集',
+};
+
 const DESCRIPTION_EN = `The Seventeenth Marcel Grossmann Meeting (MG17) was held at **Aurum**, the 'Gabriele d'Annunzio' University and ICRANet, in **Pescara, Italy**, from 7 to 12 July 2024.
 
 Since 1975, the Marcel Grossmann Meetings on Recent Developments in Theoretical and Experimental General Relativity, Gravitation, and Relativistic Field Theories have been organized in order to provide opportunities for discussing recent advances in gravitation, general relativity and relativistic field theories, emphasizing mathematical foundations, physical predictions and experimental tests. The objective of these meetings is to elicit exchange among scientists that may deepen our understanding of spacetime structures as well as to review the status of ongoing experiments aimed at testing Einstein's theory of gravitation either from the ground or from space.
@@ -215,14 +246,22 @@ async function main() {
   console.log('导入自定义页面…');
   await db.insert(eventPages).values(pages.map((p) => {
     const nav = NAV_GROUP[p.slug] ?? { group: 'about', pos: 90 };
+    const zh = PAGE_TITLE_ZH[p.slug];
+    // 「Confirmed plenary speakers」与 /speakers 是同一批人,
+    // 但这份是 Indico 的原始导出:姓名、报告题目、摘要连成一段斜体,
+    // 一万六千像素长。结构化的那份已经在讲者页,这份不进导航(仍可直达,
+    // 因为旧链接可能还在流传)。
+    const hideFromNav = p.slug === 'plenary-speakers';
     return {
       eventId: event!.id,
       slug: p.slug,
       title: p.title,
       body: rewriteImages(p),
+      // 只覆盖标题,正文沿用英文原文(历史记录不改写)
+      contentI18n: zh ? { zh: { title: zh } } : null,
       position: nav.pos,
       group: nav.group,
-      showInNav: true,
+      showInNav: !hideFromNav,
       sourceUrl: p.source,
     };
   }));

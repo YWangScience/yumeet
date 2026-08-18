@@ -9,10 +9,24 @@
 .trigger:hover { color: var(--yu-color-text-primary); }
 .trigger:focus-visible { outline: 3px solid var(--yu-color-focus-ring); outline-offset: 2px; border-radius: 4px; }
 .trigger[aria-expanded='true'] { color: var(--yu-color-text-primary); }
-.caret {
+.caret, .caretUp {
   width: 0; height: 0;
   border-left: 3.5px solid transparent; border-right: 3.5px solid transparent;
   border-top: 4px solid currentColor;
+  transition: transform 160ms ease;
+}
+/* 展开时箭头翻转 —— 悬停菜单尤其需要这个,它是「已经展开了」的唯一静态线索 */
+.caretUp { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .caret, .caretUp { transition: none; } }
+/*
+ * 标签与菜单之间那 8px 空隙会让悬停在半路断掉,指针一旦掠过就收起。
+ * 用一条透明的伪元素把空隙补上,指针始终落在菜单的命中区内 ——
+ * 这比缩小间距更好:视觉上的呼吸感与命中区可以是两回事。
+ */
+.menu::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: -10px; height: 10px;
 }
 .menu {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;

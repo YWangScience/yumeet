@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { NavLink } from './site-nav';
+import type { NavEntry, NavLink } from './site-nav';
 import styles from './mobile-nav.module.css';
 
 interface Props {
   label: string;
-  items: NavLink[];
-  groups: [string, NavLink[]][];
-  groupLabels: Record<string, string>;
+  /** 与桌面端同一份有序板块,保证两端的顺序一致 */
+  entries: NavEntry[];
   cta?: NavLink | null;
 }
 
@@ -20,7 +19,7 @@ interface Props {
  * 手机用户因此完全无法在站内跳转 —— 这里用抽屉把全部入口还给他们。
  * 打开时锁定背景滚动、Esc 关闭并归还焦点、焦点限制在抽屉内。
  */
-export function MobileNav({ label, items, groups, groupLabels, cta }: Props) {
+export function MobileNav({ label, entries, cta }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -69,31 +68,32 @@ export function MobileNav({ label, items, groups, groupLabels, cta }: Props) {
           <div className={styles.scrim} onClick={() => setOpen(false)} aria-hidden="true" />
           <div className={styles.panel} id={panelId} ref={panelRef} role="dialog" aria-modal="true" aria-label={label}>
             <nav className={styles.panelNav}>
-              {items.length > 0 && (
-                <ul className={styles.list}>
-                  {items.map((i) => (
-                    <li key={i.href}>
-                      <Link className={styles.primary} href={i.href} onClick={() => setOpen(false)}>
-                        {i.label}
+              {/* 抽屉里按同一顺序铺开:单页板块是一条直达链接,
+                  多页板块列出小标题与其下各页 —— 手机上不做二级折叠,
+                  展开一次就把全部去处看完,比层层点开快得多。 */}
+              {entries.map((e) => (
+                e.kind === 'link' ? (
+                  <ul key={e.href} className={styles.list}>
+                    <li>
+                      <Link className={styles.primary} href={e.href} onClick={() => setOpen(false)}>
+                        {e.label}
                       </Link>
                     </li>
-                  ))}
-                </ul>
-              )}
-
-              {groups.map(([key, links]) => (
-                <section key={key} className={styles.group}>
-                  <p className={styles.groupLabel}>{groupLabels[key] ?? key}</p>
-                  <ul className={styles.list}>
-                    {links.map((l) => (
-                      <li key={l.href}>
-                        <Link className={styles.item} href={l.href} onClick={() => setOpen(false)}>
-                          {l.label}
-                        </Link>
-                      </li>
-                    ))}
                   </ul>
-                </section>
+                ) : (
+                  <section key={e.label} className={styles.group}>
+                    <p className={styles.groupLabel}>{e.label}</p>
+                    <ul className={styles.list}>
+                      {e.links.map((l) => (
+                        <li key={l.href}>
+                          <Link className={styles.item} href={l.href} onClick={() => setOpen(false)}>
+                            {l.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )
               ))}
 
               {cta && (

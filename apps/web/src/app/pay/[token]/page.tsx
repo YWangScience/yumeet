@@ -6,7 +6,7 @@ import {
   type PaymentMethod,
 } from '@yumeet/core';
 import { resolveLocale } from '@/lib/locale-server';
-import { translator, pick, type Locale } from '@/lib/i18n';
+import { translator, pick, ticketContent, type Locale } from '@/lib/i18n';
 import { formatMoney } from '@/lib/format';
 import { MethodSwitcher } from '@/components/method-switcher';
 import { switchMethodAction } from './actions';
@@ -80,7 +80,7 @@ export default async function PayPage({ params, searchParams }: Props) {
               </span>
             </div>
             <div className={styles.metaRow}>
-              <span>{ticket?.name}</span>
+              <span>{ticket ? ticketContent(ticket, locale).name : null}</span>
               <span className={styles.methodChip}>{METHOD_LABELS[method][locale]}</span>
             </div>
             {order.expiresAt && (

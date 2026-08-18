@@ -102,30 +102,55 @@
 
 /* ── 摘要展开 ────────────────────────────────────────────── */
 
-.toggle {
+/*
+ * 整张卡片的命中区。用 <button> 而不是给 <li> 挂 onClick:
+ * 前者天然可聚焦、可回车触发、读屏会念出「按钮,已折叠」,
+ * 后者要手写一堆 tabIndex 与键盘处理才能勉强等价。
+ * 外观完全交给卡片,这里只负责「可按」这件事。
+ */
+.hit {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hit:disabled {
+  cursor: default;
+}
+
+/* 焦点环画在卡片上,而不是内部这层透明按钮上 */
+.hit:focus-visible {
+  outline: none;
+}
+
+.card:has(.hit:focus-visible),
+.cardOpen:has(.hit:focus-visible) {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* 「展开摘要」现在只是提示,不是唯一下手处 —— 弱化成一行文字,
+   悬停整卡时才提亮,把「这张卡可以按」说清楚 */
+.hint {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: var(--yu-space-3);
-  padding: 3px 10px 3px 11px;
-  border: 1px solid var(--yu-color-hairline);
-  border-radius: var(--yu-radius-pill);
-  background: transparent;
   color: var(--yu-color-accent-text);
   font-size: var(--yu-text-footnote-size);
   line-height: 1.5;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
 }
 
-.toggle:hover {
-  border-color: var(--yu-color-accent);
-  background: color-mix(in srgb, var(--yu-color-accent) 8%, transparent);
-}
-
-.toggle:focus-visible {
-  outline: 2px solid var(--yu-color-focus-ring);
-  outline-offset: 2px;
+.card:hover .hintText,
+.cardOpen .hintText {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .chevron, .chevronUp {

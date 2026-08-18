@@ -2,9 +2,9 @@
    颜色 / 字号 / 间距一律取 --yu- token;--sched-* 仅是本组件的几何量。 */
 
 .root {
-  /* 5 分钟一格。15px 是「22 分钟的报告能放下时间+两行标题+讲者」倒推出来的:
-     并行分会的报告普遍 20–25 分钟,放不下讲者名的日程表等于没写讲者。 */
-  --sched-slot-h: 15px;
+  /* 5 分钟一格。16px × 最小 5 格 = 78px,正好装下
+     「时间+讲者(至多两行)」与「标题(至多三行)」。 */
+  --sched-slot-h: 16px;
   /* 空档里的 5 分钟:压到 1/5。空白仍在、先后仍看得出,
      但整天不会被上午的空场撑成两屏。 */
   --sched-slot-gap-h: 2.6px;
@@ -274,14 +274,22 @@
   z-index: 0;
 }
 
+/*
+ * 网格线的分量。
+ *
+ * 六列会场 × 十几个整点,如果列线与时间线都用同一档实线,画面上就是
+ * 上百条等重的线在跟卡片抢注意力 —— 读者要找的是卡片,不是网格。
+ * 所以把两组线都退到极淡:列线只需暗示「这是另一个会场」,
+ * 时间线只需暗示「这里是整点」。真正划分区块的是卡片自身的边框。
+ */
 .colLine {
   z-index: 0;
-  border-left: 1px solid var(--yu-color-hairline);
+  border-left: 1px solid color-mix(in srgb, var(--yu-color-hairline) 45%, transparent);
 }
 
 .tick {
   z-index: 0;
-  border-top: 1px solid var(--yu-color-hairline);
+  border-top: 1px dotted color-mix(in srgb, var(--yu-color-hairline) 70%, transparent);
   pointer-events: none;
 }
 
@@ -309,9 +317,23 @@
   overflow: hidden;
   padding: var(--yu-space-1) var(--yu-space-2);
   margin-bottom: 2px;
-  border: 1px solid var(--yu-color-hairline);
+  /* 卡片不描完整边框:底色 + 左侧色条已经足够把它从网格里托出来。
+     六百张卡片各描一圈线,合起来比网格线还吵。 */
+  border: 0;
   border-radius: var(--yu-radius-control);
+  background: var(--yu-color-bg-section);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yu-color-hairline) 55%, transparent);
+  transition: box-shadow 160ms ease, background 160ms ease;
+}
+
+.card:hover {
   background: var(--yu-color-bg-elevated);
+  box-shadow: inset 0 0 0 1px var(--yu-color-accent),
+              0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
 }
 
 .cardTime {
@@ -377,7 +399,8 @@
 }
 
 /* 11.5px / 1.3:比 caption 再紧半档。日程格子的约束是「一屏放下六天六会场」,
-   在这个尺度上多出的每半个字号都直接换成少一行标题。 */
+   在这个尺度上多出的每半个字号都直接换成少一行标题。
+   标题封顶三行 —— 再多就会把讲者挤出卡片,而讲者比标题的后半截更该留下。 */
 .cardTitle {
   font-size: 11.5px;
   font-weight: 600;
@@ -404,16 +427,19 @@
 }
 
 /* 讲者是日程上最常被找的那一行,给它专门一档字重与颜色,
-   让眼睛在密排的格子里能先抓到人名再看标题。 */
+   让眼睛在密排的格子里能先抓到人名再看标题。
+   长名字折到第二行为止(合作机构长名很常见),再长就省略号。 */
 .speakerName {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   font-size: 11px;
   line-height: 1.25;
   font-weight: 500;
   color: var(--yu-color-text-secondary);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .speakerAff {
@@ -509,15 +535,22 @@
 
 /* ------------------------------------------------------- kind 视觉分档(共用) */
 
+/*
+ * 类型差异只靠底色与左侧色条表达,不再各自描边。
+ * 这样一屏几十张卡片时,视觉上分层的是「深浅」而不是「几十种框」。
+ */
 .kind_talk {
   background: var(--yu-color-bg-elevated);
-  border-color: var(--yu-color-hairline);
 }
 
 .kind_keynote {
-  background: color-mix(in srgb, var(--yu-color-accent) 12%, var(--yu-color-bg-elevated));
-  border-color: color-mix(in srgb, var(--yu-color-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--yu-color-accent) 10%, var(--yu-color-bg-elevated));
   box-shadow: inset 3px 0 0 var(--yu-color-accent);
+}
+
+.kind_keynote:hover {
+  box-shadow: inset 3px 0 0 var(--yu-color-accent),
+              0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
 .kind_keynote .cardTitle,
@@ -530,10 +563,15 @@
   border-color: color-mix(in srgb, var(--yu-color-accent) 45%, transparent);
 }
 
+/* 茶歇午餐是背景信息,压到最淡,让它从卡片序列里退开 */
 .kind_break {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yu-color-hairline) 45%, transparent);
+}
+
+.kind_break:hover {
   background: var(--yu-color-bg-section);
-  border-style: dashed;
-  border-color: var(--yu-color-hairline);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--yu-color-hairline) 45%, transparent);
 }
 
 .kind_break .cardTitle,
@@ -544,8 +582,7 @@
 
 .kind_poster,
 .kind_social {
-  background: color-mix(in srgb, var(--yu-color-text-secondary) 12%, var(--yu-color-bg-elevated));
-  border-color: color-mix(in srgb, var(--yu-color-text-secondary) 38%, transparent);
+  background: color-mix(in srgb, var(--yu-color-text-secondary) 10%, var(--yu-color-bg-elevated));
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--yu-color-text-secondary) 55%, transparent);
 }
 

@@ -7,13 +7,33 @@ import styles from './nav-menu.module.css';
 
 /**
  * 导航下拉菜单(ch08 §8.5)
- * 键盘可达:Enter/Space 展开,Esc 关闭并归还焦点,方向键在项间移动。
+ *
+ * 指针设备上**悬停即展开**:导航是浏览行为,不是提交行为,
+ * 逼人先点一下才肯露出目录,等于在每次找路时多收一次费。
+ *
+ * 三处细节决定它是好用还是烦人:
+ *   进入不延迟 —— 鼠标落到标签上,菜单立刻在;犹豫感来自延迟。
+ *   离开延迟 160ms —— 指针从标签斜切到菜单项时会短暂掠过外部,
+ *     立即收起会让菜单在半路消失,这是悬停菜单最常见的毛病。
+ *   触屏与键盘仍走点击/Enter —— 触屏没有悬停,把它当成鼠标是行不通的。
  */
 export function NavMenu({ label, links }: { label: string; links: NavLink[] }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listId = useId();
+
+  const cancelClose = () => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+  };
+  const openNow = () => { cancelClose(); setOpen(true); };
+  const closeSoon = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpen(false), 160);
+  };
+
+  useEffect(() => () => cancelClose(), []);
 
   useEffect(() => {
     if (!open) return;
@@ -42,7 +62,16 @@ export function NavMenu({ label, links }: { label: string; links: NavLink[] }) {
   };
 
   return (
-    <div className={styles.wrap} ref={wrapRef}>
+    <div
+      className={styles.wrap}
+      ref={wrapRef}
+      onPointerEnter={(e) => { if (e.pointerType === 'mouse') openNow(); }}
+      onPointerLeave={(e) => { if (e.pointerType === 'mouse') closeSoon(); }}
+      // 焦点移出整个菜单才收起:Tab 在标签与菜单项之间移动时不该被打断
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false);
+      }}
+    >
       <button
         ref={btnRef}
         type="button"
@@ -51,6 +80,7 @@ export function NavMenu({ label, links }: { label: string; links: NavLink[] }) {
         aria-controls={listId}
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
+        onFocus={openNow}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' && open) {
             e.preventDefault();
@@ -59,7 +89,7 @@ export function NavMenu({ label, links }: { label: string; links: NavLink[] }) {
         }}
       >
         {label}
-        <span className={styles.caret} aria-hidden="true" />
+        <span className={open ? styles.caretUp : styles.caret} aria-hidden="true" />
       </button>
       {open && (
         <ul className={styles.menu} id={listId}>

@@ -429,6 +429,15 @@ const T = {
   typeTalk: { zh: '报告', en: 'Talk' },
   typePlenary: { zh: '全体报告', en: 'Plenary' },
   typePoster: { zh: '海报', en: 'Poster' },
+  moreSessions: { zh: '另有 {n} 场', en: '{n} more sessions' },
+  notOnSale: { zh: '尚未开售', en: 'Not yet on sale' },
+  seatsLeft: { zh: '仅剩 {n} 席', en: '{n} left' },
+  openForRegistration: { zh: '可注册', en: 'Available' },
+  navProgram: { zh: '会议日程', en: 'Program' },
+  navTalks: { zh: '学术报告', en: 'Talks' },
+  navAward: { zh: '奖项', en: 'Award' },
+  navEvents: { zh: '活动', en: 'Events' },
+  navAbout: { zh: '关于会议', en: 'About' },
   automation: { zh: '自动化', en: 'Automation' },
   paymentSettings: { zh: '收款设置', en: 'Payment settings' },
   paymentSettingsLede: {
@@ -1074,5 +1083,27 @@ export function eventContent(
     title: o?.title ?? event.title,
     subtitle: o?.subtitle ?? event.subtitle,
     description: o?.description ?? event.description,
+  };
+}
+
+/**
+ * 票种的本地化视图,与 eventContent 同一套回退规则:
+ * 有对应语言的覆盖就用覆盖,没有就退回原字段。
+ *
+ * 票种名与说明是参会者按下付款前读到的最后一段文字,
+ * 在中文界面里露出一整句英文条款,是最不该省的地方。
+ */
+export function ticketContent(
+  ticket: {
+    name: string;
+    description: string | null;
+    contentI18n?: Record<string, { name?: string; description?: string }> | null;
+  },
+  locale: Locale,
+): { name: string; description: string | null } {
+  const o = ticket.contentI18n?.[locale];
+  return {
+    name: o?.name ?? ticket.name,
+    description: o?.description ?? ticket.description,
   };
 }

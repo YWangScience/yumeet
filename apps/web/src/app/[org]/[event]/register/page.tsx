@@ -5,7 +5,7 @@ import { getEventBySlug, getEventForms, getEventTickets, encodeId, type FormFiel
 import { RegisterForm } from '@/components/register-form';
 import { resolveLocale } from '@/lib/locale-server';
 import { eventBase } from '@/lib/event-base';
-import { translator, eventContent, INTL_LOCALE } from '@/lib/i18n';
+import { translator, eventContent, ticketContent, INTL_LOCALE } from '@/lib/i18n';
 import styles from './register.module.css';
 
 interface Props {
@@ -46,8 +46,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
     .filter((t) => t.quantityTotal == null || t.quantitySold < t.quantityTotal)
     .map((t) => ({
       publicId: encodeId('ticket', t.id),
-      name: t.name,
-      description: t.description,
+      ...ticketContent(t, locale),
       priceCents: t.priceCents,
       currency: t.currency,
       remaining: t.quantityTotal == null ? null : t.quantityTotal - t.quantitySold,

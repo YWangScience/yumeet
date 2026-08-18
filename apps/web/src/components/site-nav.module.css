@@ -44,3 +44,12 @@
   .inner { padding: 0 var(--yu-space-4); }
   .links { gap: var(--yu-space-2); }
 }
+
+/* 届数的序数后缀:上标但不缩到看不清,也不撑高行盒 */
+.ordinal {
+  font-size: 0.62em;
+  line-height: 0;
+  vertical-align: super;
+  letter-spacing: 0;
+  margin-left: 0.5px;
+}

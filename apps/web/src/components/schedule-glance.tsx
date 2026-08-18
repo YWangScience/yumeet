@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { formatTime, formatDayLabel } from '@/lib/format';
+import { translator, type Locale } from '@/lib/i18n';
 import styles from './schedule.module.css';
 
 interface Session {
@@ -6,17 +8,17 @@ interface Session {
   startsAt: Date; endsAt: Date;
   speakers: { name: string; affiliation?: string }[];
 }
-interface Room { id: string; name: string }
-
 interface Props {
   days: { day: string; items: Session[] }[];
-  rooms: Room[];
   timezone: string;
   limit?: number;
+  /** 完整日程页地址;「另有 N 场」直接落到对应日期的锚点 */
+  scheduleHref: string;
+  locale: Locale;
 }
 
-export function ScheduleGlance({ days, rooms, timezone, limit }: Props) {
-  const roomName = (id: string | null) => rooms.find((r) => r.id === id)?.name ?? null;
+export function ScheduleGlance({ days, timezone, limit, scheduleHref, locale }: Props) {
+  const tt = translator(locale);
   return (
     <div className={styles.glance}>
       {days.map(({ day, items }) => {
@@ -38,14 +40,16 @@ export function ScheduleGlance({ days, rooms, timezone, limit }: Props) {
                           {s.speakers.map((sp) => sp.name).join('、')}
                         </span>
                       )}
-                      {roomName(s.roomId) && <span className={styles.room}>{roomName(s.roomId)}</span>}
                     </p>
                   </div>
                 </li>
               ))}
             </ol>
             {limit && items.length > limit && (
-              <p className={styles.moreCount}>另有 {items.length - limit} 场</p>
+              // 直接落到完整日程里的这一天,而不是让人到了日程页再自己找日期
+              <Link className={styles.moreCount} href={`${scheduleHref}#day-${day}`}>
+                {tt('moreSessions', { n: items.length - limit })} →
+              </Link>
             )}
           </section>
         );

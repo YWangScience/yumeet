@@ -71,6 +71,9 @@ export const tickets = pgTable('tickets', {
   eventId: uuid('event_id').notNull().references(() => events.id),
   name: text('name').notNull(),
   description: text('description'),
+  /** 多语言覆盖:{ en: { name, description }, zh: {...} } —— 与 events/event_pages 同一套模式。
+      票种名与说明是参会者付款前读的最后一段文字,不能只有一种语言。 */
+  contentI18n: jsonb('content_i18n').$type<Record<string, { name?: string; description?: string }>>(),
   priceCents: integer('price_cents').notNull().default(0),
   currency: text('currency').notNull().default('EUR'),
   quantityTotal: integer('quantity_total'),

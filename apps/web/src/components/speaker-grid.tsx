@@ -31,9 +31,13 @@ function initials(name: string): string {
  * 讲者阵容是参会者决定是否注册的首要依据(ch01 原则 2:为每个角色做减法,
  * 但决定性信息必须前置),所以照片 + 姓名 + 单位 + 报告题目一律直出。
  *
- * 摘要则收在卡片里,点击才展开 —— 三十多位讲者的摘要平铺在页面下方时,
- * 页面会长到没人滚得到底,而且「谁讲什么」与「讲的是什么」被拆到两处,
- * 想看某人的摘要得先记住名字再去下面找。就地展开把这两件事合回一处。
+ * 摘要收在卡片里就地展开 —— 三十多份摘要平铺在页面下方时,页面长到没人滚得到底,
+ * 而且「谁讲什么」与「讲的是什么」被拆到两处。
+ *
+ * **整张卡片就是那个开关**,不在卡片里再放一枚小按钮:
+ * 卡片本身已经是一个视觉上的可操作单元,再嵌一个按钮等于把命中区
+ * 从两百多平方像素缩到几十,还让人先找按钮在哪。右下角的箭头只是状态提示,
+ * 不是唯一的下手处。语义上用 <button> 包住整块,键盘与读屏因此照常可用。
  *
  * 网格用 align-items: start,于是展开的卡片只把自己撑高,不会顶动同排的其他人。
  */
@@ -57,7 +61,15 @@ export function SpeakerGrid({
           const hasBio = Boolean(s.bio);
           return (
             <li key={s.id} className={open ? styles.cardOpen : styles.card} id={`s-${s.id}`}>
-              <div className={styles.head}>
+              <button
+                type="button"
+                className={styles.hit}
+                aria-expanded={hasBio ? open : undefined}
+                aria-controls={hasBio ? `bio-${s.id}` : undefined}
+                disabled={!hasBio}
+                onClick={() => hasBio && setOpenId(open ? null : s.id)}
+              >
+                <div className={styles.head}>
                 {s.photoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -77,21 +89,18 @@ export function SpeakerGrid({
                   {s.talkTitle && <p className={styles.talk}>{s.talkTitle}</p>}
 
                   {hasBio && (
-                    <button
-                      type="button"
-                      className={styles.toggle}
-                      aria-expanded={open}
-                      aria-controls={`bio-${s.id}`}
-                      onClick={() => setOpenId(open ? null : s.id)}
-                    >
-                      <span>{open ? tt('hideAbstract') : tt('readAbstract')}</span>
+                    <span className={styles.hint}>
+                      <span className={styles.hintText}>
+                        {open ? tt('hideAbstract') : tt('readAbstract')}
+                      </span>
                       <span className={open ? styles.chevronUp : styles.chevron} aria-hidden="true">
                         ⌄
                       </span>
-                    </button>
+                    </span>
                   )}
                 </div>
               </div>
+              </button>
 
               {hasBio && (
                 <div id={`bio-${s.id}`} className={styles.bio} hidden={!open}>

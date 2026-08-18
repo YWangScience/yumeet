@@ -53,7 +53,14 @@ const SLOT_MS = 5 * 60_000;
 /** 网格上下边界对齐到半小时 */
 const SNAP_MS = 30 * 60_000;
 /** 卡片最小高度(格),防止极短议程压成一条线 */
-const MIN_SLOTS = 4;
+/*
+ * 卡片的最小格数。
+ *
+ * 由内容预算倒推:时间与讲者一行(长名可折到两行)+ 标题最多三行,
+ * 约需 78px;5 格 × 16px 恰好覆盖。并行分会的报告间隔 24 分钟(= 5 格),
+ * 所以取 5 不会压到下一场。
+ */
+const MIN_SLOTS = 5;
 /** 低于该高度的卡片隐藏所属机构,避免溢出 */
 const DENSE_SLOTS = 9;
 
@@ -213,6 +220,26 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
   const [showVenueTime, setShowVenueTime] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * 从首页「另有 N 场」跳过来时带着 #day-YYYY-MM-DD。
+   * 日程是分日签的,单纯滚动没用 —— 得把对应那一天选中,
+   * 否则人落地看到的还是第一天,得自己再找一次。
+   */
+  useEffect(() => {
+    const applyHash = () => {
+      const m = /^#day-(\d{4}-\d{2}-\d{2})$/.exec(window.location.hash);
+      if (!m) return;
+      const i = days.findIndex((d) => d.day === m[1]);
+      if (i >= 0) {
+        setSelected(i);
+        rootRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, [days]);
 
   useEffect(() => {
     const tz = viewerTimeZone();

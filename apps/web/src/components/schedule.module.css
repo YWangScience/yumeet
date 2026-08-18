@@ -38,23 +38,30 @@
   color: var(--yu-color-text-secondary);
   display: flex; flex-wrap: wrap; gap: var(--yu-space-2);
 }
-.room::before { content: '·'; margin-right: var(--yu-space-2); }
 .kind_break .sessionTitle, .kind_social .sessionTitle {
   color: var(--yu-color-text-secondary); font-weight: 400;
 }
-.kind_keynote .sessionTitle::after {
-  content: '全体大会';
-  margin-left: var(--yu-space-2);
-  font-size: var(--yu-text-caption-size);
-  font-weight: 500;
-  color: var(--yu-color-accent-text);
-  border: 1px solid color-mix(in srgb, var(--yu-color-accent) 40%, transparent);
-  border-radius: var(--yu-radius-pill);
-  padding: 1px 8px;
-  white-space: nowrap;
-}
+
+/* 首页的日程速览只回答「哪天有什么、谁讲」。
+   会场名与「全体大会」标签在这里都是噪声:首页速览只列每天头几场,
+   而那几场清一色在主会场,标注等于每行都重复同一句话 —— 完整日程页里
+   会场是有意义的(六个厅并行),那里才需要。 */
+
 .moreCount {
+  display: inline-block;
   margin: var(--yu-space-3) 0 0;
   font-size: var(--yu-text-footnote-size);
-  color: var(--yu-color-text-secondary);
+  color: var(--yu-color-accent-text);
+  text-decoration: none;
+}
+
+.moreCount:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.moreCount:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

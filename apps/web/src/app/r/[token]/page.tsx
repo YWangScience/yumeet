@@ -7,7 +7,7 @@ import {
 } from '@yumeet/core';
 import { formatDateRange, formatMoney } from '@/lib/format';
 import { resolveLocale } from '@/lib/locale-server';
-import { translator, eventContent, INTL_LOCALE, type Locale, type TKey } from '@/lib/i18n';
+import { translator, eventContent, ticketContent, INTL_LOCALE, type Locale, type TKey } from '@/lib/i18n';
 import styles from './tracking.module.css';
 
 export const dynamic = 'force-dynamic'; // 个人页不缓存
@@ -139,7 +139,7 @@ export default async function TrackingPage({ params, searchParams }: Props) {
           {ticket && (
             <div className={styles.row}>
               <dt>{tt('ticketType')}</dt>
-              <dd>{ticket.name} · {formatMoney(ticket.priceCents, ticket.currency)}</dd>
+              <dd>{ticketContent(ticket, locale).name} · {formatMoney(ticket.priceCents, ticket.currency)}</dd>
             </div>
           )}
           <div className={styles.row}>

@@ -150,9 +150,10 @@ export default async function EventPage({ params, searchParams }: Props) {
             </div>
             <ScheduleGlance
               days={days}
-              rooms={schedule.rooms}
               timezone={event.timezone}
               limit={4}
+              scheduleHref={`${base}/schedule`}
+              locale={locale}
             />
           </section>
         )}
@@ -167,7 +168,7 @@ export default async function EventPage({ params, searchParams }: Props) {
                 </Link>
               )}
             </div>
-            <TicketList tickets={tickets} />
+            <TicketList tickets={tickets} locale={locale} />
           </section>
         )}
 
