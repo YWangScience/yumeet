@@ -424,6 +424,11 @@ const T = {
     zh: '你的确认码是 {code}。名额已为你保留,完成下方付款后即自动确认。',
     en: 'Your confirmation code is {code}. Your place is held; it is confirmed automatically once payment below is complete.',
   },
+  readAbstract: { zh: '展开摘要', en: 'Read abstract' },
+  hideAbstract: { zh: '收起', en: 'Hide' },
+  typeTalk: { zh: '报告', en: 'Talk' },
+  typePlenary: { zh: '全体报告', en: 'Plenary' },
+  typePoster: { zh: '海报', en: 'Poster' },
   automation: { zh: '自动化', en: 'Automation' },
   paymentSettings: { zh: '收款设置', en: 'Payment settings' },
   paymentSettingsLede: {

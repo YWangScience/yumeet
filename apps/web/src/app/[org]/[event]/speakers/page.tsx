@@ -53,16 +53,6 @@ export default async function SpeakersPage({ params, searchParams }: Props) {
           talkTitle: s.talkTitle, photoUrl: s.photoUrl, bio: s.bio,
         }))}
       />
-
-      <section className={styles.detail}>
-        {speakers.filter((s) => s.bio).map((s) => (
-          <article key={s.id} className={styles.entry} id={`s-${s.id}`}>
-            <h2 className={styles.entryName}>{s.name}</h2>
-            {s.talkTitle && <p className={styles.entryTalk}>{s.talkTitle}</p>}
-            <p className={styles.entryBio}>{s.bio}</p>
-          </article>
-        ))}
-      </section>
     </main>
   );
 }

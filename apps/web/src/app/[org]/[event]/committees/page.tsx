@@ -52,6 +52,22 @@ export default async function CommitteesPage({ params, searchParams }: Props) {
       <h1 className={styles.title}>{tt('committees')}</h1>
       <p className={styles.lede}>{tt('committeesLede', { n: all.length })}</p>
 
+      {/* 三个委员会加起来三百多人,页面长到七千像素。
+          先给一排锚点,让人一眼看到有哪几个委员会、各多少人,
+          再决定往哪跳 —— 否则只能靠滚动去撞。 */}
+      <nav className={styles.jump} aria-label={tt('committees')}>
+        {GROUPS.map(({ key, label }) => {
+          const n = all.filter((m) => m.groupKey === key).length;
+          if (n === 0) return null;
+          return (
+            <a key={key} className={styles.jumpLink} href={`#g-${key}`}>
+              {tt(label)}
+              <span className={styles.jumpCount}>{n}</span>
+            </a>
+          );
+        })}
+      </nav>
+
       {GROUPS.map(({ key, label }) => {
         const members = all.filter((m) => m.groupKey === key);
         if (members.length === 0) return null;

@@ -4,6 +4,7 @@ import {
   useEffect, useMemo, useRef, useState,
   type CSSProperties, type KeyboardEvent,
 } from 'react';
+import Link from 'next/link';
 import { formatDayLabel, formatTime, viewerTimeZone } from '@/lib/format';
 import styles from './schedule-grid.module.css';
 import { translator, INTL_LOCALE, type Locale } from '@/lib/i18n';
@@ -31,6 +32,8 @@ export interface ScheduleSession {
   lane: number;
   lanes: number;
   speakers: ScheduleSpeaker[];
+  /** 有对应摘要时的详情页地址;没有则卡片不可点(如茶歇、午餐) */
+  href?: string | null;
 }
 
 export interface ScheduleDay {
@@ -115,6 +118,8 @@ interface Layout {
   dayRooms: ScheduleRoom[];
   rows: number;
   ticks: { key: string; row: number; label: string }[];
+  /** 逐行标记:该 5 分钟行是否位于被压缩的空档内 */
+  compressed?: boolean[];
   placed: Placed[];
   firstMs: number;
   lastMs: number;
@@ -136,7 +141,7 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     lastMs = Math.max(lastMs, Date.parse(s.end));
   }
   if (!Number.isFinite(firstMs) || !Number.isFinite(lastMs)) {
-    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0 };
+    return { dayRooms, rows: 1, ticks: [], placed: [], firstMs: 0, lastMs: 0, compressed: [] };
   }
 
   const gridStart = Math.floor(firstMs / SNAP_MS) * SNAP_MS;
@@ -169,7 +174,36 @@ function layoutDay(day: ScheduleDay, rooms: ScheduleRoom[], timeZone: string): L
     };
   });
 
-  return { dayRooms, rows, ticks, placed, firstMs, lastMs };
+  /*
+   * 空档压缩。
+   *
+   * 会议的一天常常是「上午全体大会、下午六个分会并行」,于是上午
+   * 五列全空、下午挤成一团。均一行高会把这段空白照原比例画出来 ——
+   * 一屏里九成是空网格,真正的内容反而要往下翻。
+   *
+   * 所以把连续 30 分钟以上完全没有议程的时段按比例压扁(仍保留先后与相对间隔,
+   * 不是删掉),读者仍看得出「这里空了一段」,但不必为此滚过两屏。
+   */
+  const busy = new Array<boolean>(rows + 2).fill(false);
+  for (const p of placed) {
+    for (let r = p.rowStart; r < p.rowEnd; r++) busy[r] = true;
+  }
+  const GAP_MIN_ROWS = 6;          // 30 分钟
+  const compressed = new Array<boolean>(rows + 2).fill(false);
+  let run = 0;
+  for (let r = 1; r <= rows + 1; r++) {
+    if (!busy[r]) { run++; continue; }
+    if (run >= GAP_MIN_ROWS) {
+      // 两端各留一格,免得卡片紧贴压缩带显得被切断
+      for (let k = r - run + 1; k < r - 1; k++) compressed[k] = true;
+    }
+    run = 0;
+  }
+  if (run >= GAP_MIN_ROWS) {
+    for (let k = rows + 2 - run + 1; k <= rows; k++) compressed[k] = true;
+  }
+
+  return { dayRooms, rows, ticks, placed, firstMs, lastMs, compressed };
 }
 
 export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
@@ -227,6 +261,22 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
 
   const cols = Math.max(1, layout.dayRooms.length);
   const template = `var(--sched-gutter) repeat(${cols}, minmax(0, 1fr))`;
+
+  // 逐行高度:普通行取 --sched-slot-h,空档内的行取压缩高度。
+  // 把连续同高的行合成 repeat(n, h),避免生成上百段的超长声明。
+  const rowTemplate = (() => {
+    const flags = layout.compressed ?? [];
+    const parts: string[] = [];
+    let i = 1;
+    while (i <= layout.rows) {
+      const c = flags[i] === true;
+      let n = 0;
+      while (i + n <= layout.rows && (flags[i + n] === true) === c) n++;
+      parts.push(`repeat(${n}, var(${c ? '--sched-slot-gap-h' : '--sched-slot-h'}))`);
+      i += n;
+    }
+    return parts.join(' ');
+  })();
   const panelId = `schedule-panel-${day.day}`;
   const tabId = (d: string) => `schedule-tab-${d}`;
 
@@ -340,7 +390,7 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
           <div
             className={styles.grid}
             role="list"
-            style={cssVars({ gridTemplateColumns: template })}
+            style={cssVars({ gridTemplateColumns: template, gridTemplateRows: rowTemplate })}
           >
             <div
               className={styles.gridSpacer}
@@ -386,6 +436,46 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                 span < DENSE_SLOTS ? styles.cardDense : '',
               ].filter(Boolean).join(' ');
 
+              // 表格里只放「时间 · 讲者 · 标题」三样。
+              // 摘要不进格子 —— 一格几十像素高,塞进整段摘要的结果是
+              // 整张表既读不了标题也读不了摘要(点进详情页才是读摘要的地方)。
+              const inner = (
+                <>
+                  {/* 时间与讲者是同级信息,放在一行:短卡片里这样能省下整整一行,
+                      让标题保住两行 —— 22 分钟的报告只有六十来像素可用。 */}
+                  <p className={styles.cardTime}>
+                    <time dateTime={session.start}>{formatTime(new Date(session.start), timeZone)}</time>
+                    <span className={styles.timeSep} aria-hidden="true">–</span>
+                    <span className={styles.srOnly}>至</span>
+                    <time dateTime={session.end}>{formatTime(new Date(session.end), timeZone)}</time>
+                    <DayShift locale={locale} shift={shift} />
+                  </p>
+                  {/* 格子里只出主讲人。合作者堆到第二行会把标题挤掉半行,
+                      而在这个尺度上「谁来讲」比「还有谁署名」重要得多;
+                      完整作者名单在详情页。 */}
+                  {session.speakers[0] && (
+                    <p className={styles.speakers}>
+                      <span className={styles.speakerName}>
+                        {session.speakers[0].name}
+                        {session.speakers.length > 1 && (
+                          <span className={styles.speakerMore}>
+                            {locale === 'zh' ? ' 等' : ' et al.'}
+                          </span>
+                        )}
+                      </span>
+                    </p>
+                  )}
+                  <div className={styles.cardBody}>
+                    {kicker && <span className={styles.kicker}>{kicker}</span>}
+                    <h3 className={styles.cardTitle}>{session.title}</h3>
+                  </div>
+                  <span className={styles.srOnly}>
+                    {room ? (locale === 'zh' ? `会场:${room.name}` : `Room: ${room.name}`)
+                      : (locale === 'zh' ? '全体活动,不限会场' : 'All-venue session')}
+                  </span>
+                </>
+              );
+
               return (
                 <div
                   key={session.id}
@@ -394,33 +484,9 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                   style={style}
                   title={session.title}
                 >
-                  <p className={styles.cardTime}>
-                    <time dateTime={session.start}>{formatTime(new Date(session.start), timeZone)}</time>
-                    <span className={styles.timeSep} aria-hidden="true">–</span>
-                    <span className={styles.srOnly}>至</span>
-                    <time dateTime={session.end}>{formatTime(new Date(session.end), timeZone)}</time>
-                    <DayShift locale={locale} shift={shift} />
-                  </p>
-                  <div className={styles.cardBody}>
-                    {kicker && <span className={styles.kicker}>{kicker}</span>}
-                    <h3 className={styles.cardTitle}>{session.title}</h3>
-                    {session.speakers.length > 0 && (
-                      <p className={styles.speakers}>
-                        {session.speakers.map((sp, i) => (
-                          <span key={`${sp.name}-${i}`} className={styles.speaker}>
-                            <span className={styles.speakerName}>{sp.name}</span>
-                            {sp.affiliation && (
-                              <span className={styles.speakerAff}>{sp.affiliation}</span>
-                            )}
-                          </span>
-                        ))}
-                      </p>
-                    )}
-                  </div>
-                  <span className={styles.srOnly}>
-                    {room ? (locale === 'zh' ? `会场:${room.name}` : `Room: ${room.name}`)
-                      : (locale === 'zh' ? '全体活动,不限会场' : 'All-venue session')}
-                  </span>
+                  {session.href
+                    ? <Link href={session.href} className={styles.cardLink}>{inner}</Link>
+                    : inner}
                 </div>
               );
             })}
@@ -448,7 +514,11 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
                 </p>
                 <div className={styles.tlBody}>
                   {kicker && <span className={styles.kicker}>{kicker}</span>}
-                  <h3 className={styles.tlTitle}>{session.title}</h3>
+                  <h3 className={styles.tlTitle}>
+                    {session.href
+                      ? <Link href={session.href} className={styles.tlTitleLink}>{session.title}</Link>
+                      : session.title}
+                  </h3>
                   {session.speakers.length > 0 && (
                     <p className={styles.speakers}>
                       {session.speakers.map((sp, i) => (

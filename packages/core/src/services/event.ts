@@ -141,6 +141,9 @@ export async function searchAbstracts(
     track: submissions.track,
     type: submissions.type,
     authors: submissions.authors,
+    // 列表里给两行摘录:六百多篇报告,光看标题常常判断不了是不是自己要找的那篇。
+    // 在 SQL 里截断,避免把六百段全文拉进进程再扔掉。
+    excerpt: sql<string>`left(${submissions.abstract}, 260)`,
   }).from(submissions)
     .where(where)
     .orderBy(asc(submissions.title))

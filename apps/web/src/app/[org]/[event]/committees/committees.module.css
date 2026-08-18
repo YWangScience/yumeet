@@ -9,3 +9,48 @@
 .groupTitle { font-size: var(--yu-text-title-3-size); font-weight: var(--yu-text-title-3-weight); letter-spacing: var(--yu-text-title-3-tracking); }
 .groupCount { font-size: var(--yu-text-footnote-size); color: var(--yu-color-text-secondary); font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .page { padding: var(--yu-space-6) var(--yu-space-5) var(--yu-space-16); } .title { font-size: 32px; } }
+
+/* ── 委员会跳转条 ─────────────────────────────────────────── */
+/* 三个委员会三百多人、七千像素长,没有锚点就只能靠滚动去撞。
+   顺带把人数摆出来:这本身就是读者想先知道的一条信息。 */
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--yu-space-3);
+  margin: var(--yu-space-6) 0 var(--yu-space-10);
+}
+
+.jumpLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--yu-space-2);
+  padding: 7px var(--yu-space-4);
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  color: var(--yu-color-text-primary);
+  font-size: var(--yu-text-callout-size);
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.jumpLink:hover {
+  border-color: var(--yu-color-accent);
+  background: color-mix(in srgb, var(--yu-color-accent) 7%, transparent);
+  text-decoration: none;
+}
+
+.jumpLink:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.jumpCount {
+  font-size: var(--yu-text-caption-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--yu-color-text-secondary);
+}
+
+/* 锚点跳转后标题不被吸顶导航盖住 */
+.group {
+  scroll-margin-top: 84px;
+}

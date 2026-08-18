@@ -129,8 +129,9 @@ async function main() {
     console.log('清除既有 MG17 数据…');
     // postgres.js 的预处理语句不支持一次执行多条,逐条执行(顺序即依赖顺序)
     const id = existing.id;
-    await db.execute(sql`DELETE FROM submissions WHERE event_id = ${id}`);
+    // sessions 现在外键引用 submissions(日程 → 摘要详情),必须先删 sessions
     await db.execute(sql`DELETE FROM sessions WHERE event_id = ${id}`);
+    await db.execute(sql`DELETE FROM submissions WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM rooms WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM event_pages WHERE event_id = ${id}`);
     await db.execute(sql`DELETE FROM event_people WHERE event_id = ${id}`);
@@ -237,11 +238,21 @@ async function main() {
       if (local) photoMap.set(url, `/mg17/${local}`);
     });
   }
+  /**
+   * 姓名归一。
+   *
+   * Indico 的名单里少数人写成「姓, 名」(如 Damour, Thibault),其余是「姓 名」。
+   * 同一份名单两种写法,按姓氏排序时会乱,读起来也扎眼 —— 统一去掉逗号。
+   * 只处理「一个逗号 + 两段」的情形,不去猜复杂的复姓与后缀。
+   */
+  const tidyName = (n: string): string =>
+    n.replace(/^([^,]+),\s*([^,]+)$/, '$1 $2').replace(/\s+/g, ' ').trim();
+
   await db.insert(eventPeople).values(structured.map((p) => ({
     eventId: event!.id,
     kind: p.kind,
     groupKey: p.groupKey ?? null,
-    name: p.name,
+    name: tidyName(p.name),
     affiliation: p.affiliation ?? null,
     country: p.country ?? null,
     talkTitle: p.talkTitle ?? null,
@@ -265,9 +276,12 @@ async function main() {
   /* ---------- 摘要 → submissions(已排期的历史投稿) ---------- */
   console.log('导入摘要…');
   const CHUNK = 200;
+  // contributionId → submissionId:日程上的每一场报告都要能点进它的摘要页,
+  // 这个映射就是把日程与摘要连起来的那根线。
+  const submissionByContribution = new Map<number, string>();
   for (let i = 0; i < abstracts.length; i += CHUNK) {
     const slice = abstracts.slice(i, i + CHUNK);
-    await db.insert(submissions).values(slice.map((a) => ({
+    const inserted = await db.insert(submissions).values(slice.map((a) => ({
       eventId: event!.id,
       track: a.sessionCode,
       type: a.kind === 'keynote' ? 'plenary' : 'talk',
@@ -282,7 +296,10 @@ async function main() {
       status: 'scheduled' as const,
       submittedAt: new Date('2024-04-01T00:00:00Z'),
       decidedAt: new Date('2024-05-15T00:00:00Z'),
-    })));
+    }))).returning({ id: submissions.id });
+    inserted.forEach((row, k) => {
+      submissionByContribution.set(slice[k]!.contributionId, row.id);
+    });
   }
 
   /* ---------- 日程:6 天,全体大会 + 平行分会 ---------- */
@@ -309,6 +326,7 @@ async function main() {
       const a = plenary[pi]!;
       rows.push({
         eventId: event!.id, roomId: hall!.id, kind: 'keynote',
+        submissionId: submissionByContribution.get(a.contributionId) ?? null,
         title: a.title,
         startsAt: rome(d, 9 + k, 0), endsAt: rome(d, 9 + k, 45),
         speakers: a.authors.slice(0, 2).map((au) => ({
@@ -335,6 +353,7 @@ async function main() {
       const m = Math.round((startH - h) * 60);
       rows.push({
         eventId: event!.id, roomId: room.id, kind: 'talk',
+        submissionId: submissionByContribution.get(a.contributionId) ?? null,
         title: a.title,
         startsAt: rome(day, h, m), endsAt: rome(day, h, m + 22),
         speakers: a.authors.slice(0, 2).map((au) => ({

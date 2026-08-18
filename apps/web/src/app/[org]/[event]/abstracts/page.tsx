@@ -4,8 +4,16 @@ import Link from 'next/link';
 import { getEventBySlug, searchAbstracts, listTracks, encodeId } from '@yumeet/core';
 import { resolveLocale } from '@/lib/locale-server';
 import { eventBase } from '@/lib/event-base';
-import { translator, eventContent } from '@/lib/i18n';
+import { translator, eventContent, type TKey } from '@/lib/i18n';
 import styles from './abstracts.module.css';
+
+/** 投稿类型的枚举值直出会在中文界面里露出一串英文,统一走词条 */
+const TYPE_LABEL: Record<string, TKey> = {
+  talk: 'typeTalk',
+  plenary: 'typePlenary',
+  poster: 'typePoster',
+  keynote: 'typePlenary',
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -119,9 +127,12 @@ export default async function AbstractsPage({ params, searchParams }: Props) {
                   {(s.authors ?? []).slice(0, 6).map((a) => a.name).join(' · ')}
                   {(s.authors ?? []).length > 6 && ' …'}
                 </p>
+                {s.excerpt && (
+                  <p className={styles.excerpt}>{s.excerpt.trim()}…</p>
+                )}
                 <p className={styles.meta}>
                   {s.track && <span className={styles.trackChip}>{s.track}</span>}
-                  <span className={styles.type}>{s.type}</span>
+                  <span className={styles.type}>{tt(TYPE_LABEL[s.type] ?? 'typeTalk')}</span>
                 </p>
               </article>
             </li>

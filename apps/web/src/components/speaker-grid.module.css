@@ -1,13 +1,13 @@
 .grid {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: var(--yu-space-4);
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  /* 报告题目长短不一,拉伸同排卡片到等高,避免参差 */
-  align-items: stretch;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* start 而非 stretch:摘要就地展开时只有被点开的那张卡片变高,
+     同排其他人不被一起拉长成一片空白。 */
+  align-items: start;
 }
-.card {
-  display: flex; gap: var(--yu-space-4); align-items: flex-start;
-  height: 100%;
+.card, .cardOpen {
+  display: flex; flex-direction: column; gap: var(--yu-space-3);
   background: var(--yu-color-bg-elevated);
   border: 1px solid var(--yu-color-hairline);
   border-radius: var(--yu-radius-card);
@@ -19,6 +19,46 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
+
+/*
+ * 展开时横跨整行。
+ *
+ * 卡片本身只有 300px 宽,摘要留在里面会变成一条四十字符宽、二十多行高的窄带,
+ * 既难读又在右侧留下一大片空白。占满整行后行长回到正常阅读区间,
+ * 版面也不再破洞 —— 这正是 CSS Grid 自动排布下 `1 / -1` 的自然行为:
+ * 它另起一行,前面的卡片留在原位,后面的顺次下移。
+ */
+.cardOpen {
+  composes: card;
+  grid-column: 1 / -1;
+  border-color: var(--yu-color-accent);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+  transform: none;
+}
+
+/* 展开态下头像与文字并排,标题可以放大一档 —— 这时它是页面的主角 */
+.cardOpen .head {
+  align-items: center;
+}
+
+.cardOpen .talk {
+  font-size: var(--yu-text-headline-size);
+  line-height: 1.32;
+  color: var(--yu-color-text-primary);
+}
+
+.cardOpen .photo,
+.cardOpen .avatar {
+  --yu-avatar-size: 96px;
+}
+
+.head {
+  display: flex;
+  gap: var(--yu-space-4);
+  align-items: flex-start;
+  min-width: 0;
+}
+
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 
 /*
@@ -59,3 +99,65 @@
 .more { margin-top: var(--yu-space-5); }
 .more a { color: var(--yu-color-accent-text); text-decoration: none; font-size: var(--yu-text-callout-size); }
 .more a:hover { text-decoration: underline; }
+
+/* ── 摘要展开 ────────────────────────────────────────────── */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--yu-space-3);
+  padding: 3px 10px 3px 11px;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-pill);
+  background: transparent;
+  color: var(--yu-color-accent-text);
+  font-size: var(--yu-text-footnote-size);
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.toggle:hover {
+  border-color: var(--yu-color-accent);
+  background: color-mix(in srgb, var(--yu-color-accent) 8%, transparent);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.chevron, .chevronUp {
+  display: inline-block;
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.chevronUp {
+  composes: chevron;
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron, .chevronUp { transition: none; }
+}
+
+.bio {
+  border-top: 1px solid var(--yu-color-hairline);
+  padding-top: var(--yu-space-3);
+}
+
+/* 摘要是长文,给它比卡片其余部分更宽松的行距 —— 卡片里的其他行是
+   扫读用的,这一段是真要读完的。宽度封到 78ch:
+   整行铺满在宽屏上会长到一行一百多字符,眼睛回行时容易串行。 */
+.bioText {
+  margin: 0;
+  max-width: 78ch;
+  font-size: var(--yu-text-callout-size);
+  line-height: 1.68;
+  color: var(--yu-color-text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}

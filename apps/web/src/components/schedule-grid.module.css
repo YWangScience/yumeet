@@ -2,7 +2,12 @@
    颜色 / 字号 / 间距一律取 --yu- token;--sched-* 仅是本组件的几何量。 */
 
 .root {
-  --sched-slot-h: 13px;      /* 5 分钟一格 */
+  /* 5 分钟一格。15px 是「22 分钟的报告能放下时间+两行标题+讲者」倒推出来的:
+     并行分会的报告普遍 20–25 分钟,放不下讲者名的日程表等于没写讲者。 */
+  --sched-slot-h: 15px;
+  /* 空档里的 5 分钟:压到 1/5。空白仍在、先后仍看得出,
+     但整天不会被上午的空场撑成两屏。 */
+  --sched-slot-gap-h: 2.6px;
   --sched-gutter: 56px;      /* 时间刻度列 */
   --sched-tabs-h: 64px;      /* 粘性 tab 条高度,供会场表头 sticky 偏移 */
   --sched-col-gap: var(--yu-space-2);
@@ -311,7 +316,7 @@
 
 .cardTime {
   margin: 0;
-  font-size: var(--yu-text-caption-size);
+  font-size: 10.5px;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
   color: var(--yu-color-text-secondary);
@@ -331,14 +336,53 @@
   font-size: var(--yu-text-caption-size);
 }
 
-.cardBody {
+/* 整张卡片是一个链接:格子本来就小,再放一个小小的「详情」按钮
+   等于把命中区缩到几像素。整格可点最省事,也最合手。 */
+/* 三行网格:时间 / 讲者 / 标题。短卡片把前两行并成一行(见 .cardDense)。 */
+.cardLink {
+  display: grid;
+  grid-template-areas: "time" "spk" "body";
+  grid-template-rows: auto auto 1fr;
+  gap: 1px;
   min-width: 0;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
 }
 
+.cardLink > .cardTime { grid-area: time; }
+.cardLink > .speakers { grid-area: spk; }
+.cardLink > .cardBody { grid-area: body; }
+
+.cardLink:hover .cardTitle {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid var(--yu-color-focus-ring);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* 标题溢出必须干净地截断:卡片高度由报告时长决定,
+   放不下时宁可少一行,也不能露出半行被裁掉的字。 */
+.cardBody {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.speakerMore {
+  opacity: 0.75;
+}
+
+/* 11.5px / 1.3:比 caption 再紧半档。日程格子的约束是「一屏放下六天六会场」,
+   在这个尺度上多出的每半个字号都直接换成少一行标题。 */
 .cardTitle {
-  font-size: var(--yu-text-caption-size);
+  font-size: 11.5px;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.3;
+  letter-spacing: -0.006em;
   color: var(--yu-color-text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -346,6 +390,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .speakers {
@@ -358,10 +403,13 @@
   min-width: 0;
 }
 
+/* 讲者是日程上最常被找的那一行,给它专门一档字重与颜色,
+   让眼睛在密排的格子里能先抓到人名再看标题。 */
 .speakerName {
   display: block;
-  font-size: var(--yu-text-caption-size);
+  font-size: 11px;
   line-height: 1.25;
+  font-weight: 500;
   color: var(--yu-color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -378,9 +426,37 @@
   white-space: nowrap;
 }
 
-/* 短卡片(< 45 分钟)放不下机构名,收起以免撑破卡片 */
+/*
+ * 短卡片(< 45 分钟)的版面预算只有六十几像素,必须排优先级。
+ * 保留的是「时间 / 标题 / 讲者」这三样 —— 讲者宁可挤也不能掉,
+ * 它是日程表上最常被搜寻的一行。让路的是场次类型标签:
+ * 并行分会里清一色是 talk,那枚标签本来也没带来信息。
+ */
 .cardDense .speakerAff {
   display: none;
+}
+
+.cardDense .kicker {
+  display: none;
+}
+
+.cardDense {
+  padding: 3px var(--yu-space-2);
+  gap: 1px;
+}
+
+/* 时间与讲者并排:省下的一行留给标题的第二行 */
+.cardDense .cardLink {
+  grid-template-areas: "time spk" "body body";
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: var(--yu-space-2);
+  align-items: baseline;
+}
+
+.cardDense .speakers {
+  margin-top: 0;
+  text-align: right;
 }
 
 .cardDense .cardTitle {
@@ -391,7 +467,7 @@
 .kicker {
   display: inline-block;
   margin-bottom: 2px;
-  padding: 0 var(--yu-space-2);
+  padding: 0 6px;
   border: 1px solid color-mix(in srgb, var(--yu-color-text-secondary) 40%, transparent);
   border-radius: var(--yu-radius-pill);
   font-size: var(--yu-text-caption-size);
@@ -627,4 +703,17 @@
 .tabDate,
 .tabWeekday {
   color: var(--yu-color-accent-text);
+}
+
+/* 移动端时间轴的标题链接:这里空间够,不必整块可点,
+   下划线让「可点」这件事自己说明自己 */
+.tlTitleLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tlTitleLink:hover,
+.tlTitleLink:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

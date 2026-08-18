@@ -130,6 +130,10 @@ export default async function SchedulePage({ params, searchParams }: Props) {
           name: sp.name,
           affiliation: sp.affiliation ?? null,
         })),
+        // 有摘要的场次点进详情页读全文;茶歇午餐没有摘要,自然也不可点
+        href: s.submissionId
+          ? `${base}/abstracts/${encodeId('submission', s.submissionId)}`
+          : null,
       };
     }),
   }));
