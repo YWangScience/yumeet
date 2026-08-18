@@ -193,6 +193,22 @@ export async function listSpeakers(eventId: string, db: Db = defaultDb) {
     .orderBy(asc(eventPeople.position));
 }
 
+/**
+ * 参会者名单(ch05 §5.4 归档)。
+ *
+ * 只返回姓名、单位与国家 —— 邮箱等联系方式从未导入,查询层也不给它留位置。
+ */
+export async function listParticipants(eventId: string, db: Db = defaultDb) {
+  return db.select({
+    id: eventPeople.id,
+    name: eventPeople.name,
+    affiliation: eventPeople.affiliation,
+    country: eventPeople.country,
+  }).from(eventPeople)
+    .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'participant')))
+    .orderBy(asc(eventPeople.name));
+}
+
 export async function listCommittee(
   eventId: string, groupKey?: string, db: Db = defaultDb,
 ) {
@@ -217,5 +233,8 @@ export async function speakerHighlights(
   const [{ committee = 0 } = { committee: 0 }] = await db
     .select({ committee: count() }).from(eventPeople)
     .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'committee')));
-  return { rows, total, committee };
+  const [{ participants = 0 } = { participants: 0 }] = await db
+    .select({ participants: count() }).from(eventPeople)
+    .where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.kind, 'participant')));
+  return { rows, total, committee, participants };
 }

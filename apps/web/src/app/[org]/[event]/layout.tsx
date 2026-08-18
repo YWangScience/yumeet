@@ -103,6 +103,10 @@ export default async function EventLayout({ children, params }: Props) {
   if (people.committee > 0) {
     sections.committee.push({ href: `${base}/committees`, label: tt('committees') });
   }
+  // 参会者名单与委员会同属「谁来了」,放在同一板块
+  if (people.participants > 0) {
+    sections.committee.push({ href: `${base}/participants`, label: tt('participants') });
+  }
 
   for (const p of navPages) {
     const label = p.contentI18n?.[locale]?.title ?? p.title;

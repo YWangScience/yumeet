@@ -436,6 +436,11 @@ const T = {
   navAward: { zh: '奖项', en: 'Award' },
   navEvents: { zh: '活动', en: 'Events' },
   navAbout: { zh: '关于会议', en: 'About' },
+  participants: { zh: '参会者', en: 'Participants' },
+  participantsLede: {
+    zh: '{n} 位参会者,来自 {c} 个国家与地区。',
+    en: '{n} participants from {c} countries and regions.',
+  },
   automation: { zh: '自动化', en: 'Automation' },
   paymentSettings: { zh: '收款设置', en: 'Payment settings' },
   paymentSettingsLede: {

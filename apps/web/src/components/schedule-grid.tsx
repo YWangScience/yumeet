@@ -296,6 +296,42 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
   const [showVenueTime, setShowVenueTime] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+
+  /*
+   * 判断吸顶栏该不该出现:看吸顶线(顶栏下沿)是否落在某段并行区间内,
+   * 且该段自己的表头已经滚过去了 —— 表头还看得见时再叠一层是多余的。
+   * 用 rAF 节流,滚动时不做多余的布局读取。
+   */
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    let raf = 0;
+    const measure = () => {
+      raf = 0;
+      const line = (rootRef.current
+        ? parseFloat(getComputedStyle(rootRef.current).getPropertyValue('--sched-nav-h') || '0')
+        : 0) + 56;
+      const ranges = el.querySelectorAll<HTMLElement>('[data-band-range]');
+      let inside = false;
+      for (const r of ranges) {
+        const b = r.getBoundingClientRect();
+        // 该段顶部已滚过吸顶线,且底部还没上来
+        if (b.top < line - 40 && b.bottom > line + 40) { inside = true; break; }
+      }
+      setStuck(inside);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure); };
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [days, selected]);
 
   /*
    * 从首页「另有 N 场」跳过来时带着 #day-YYYY-MM-DD。
@@ -486,7 +522,27 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
         </h2>
 
         {/* 桌面:多轨时间网格 */}
-        <div className={styles.gridView}>
+        <div className={styles.gridView} ref={gridRef}>
+          {/*
+            * 吸顶的会场行。
+            *
+            * 只在并行时段内出现:上午单会场时六个列名没有对应的列,
+            * 一直挂在顶上既没用又占地方。它是浮层,不参与网格排布,
+            * 所以不会像早先那样压住某一行卡片 —— 早先的做法是把表头
+            * 塞进网格首行,于是每段并行的第一排报告都被盖掉半截。
+            */}
+          <div
+            className={stuck ? styles.roomHeadStuck : styles.roomHeadStuckHidden}
+            style={cssVars({ gridTemplateColumns: template })}
+            aria-hidden="true"
+          >
+            <span className={styles.roomHeadGutter} />
+            {layout.dayRooms.map((r) => (
+              <span key={r.id} className={styles.roomHeadCell}>
+                <span className={styles.roomHeadName}>{r.name}</span>
+              </span>
+            ))}
+          </div>
           {/*
             * 上午没有并行,但主会场是在用的 —— 全体大会就在那里开。
             * 先在网格上方放一行「只写主会场」的表头,读者一开始就知道
@@ -514,6 +570,18 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
               aria-hidden="true"
               style={{ gridColumn: '1 / -1', gridRow: `1 / span ${layout.rows}` }}
             />
+            {/* 每段并行的整段范围:不可见,只用来让吸顶栏知道
+                「现在滚到的位置还在不在并行时段里」 */}
+            {(layout.colBands ?? []).map((band) => (
+              <div
+                key={`range-${band.start}`}
+                data-band-range=""
+                aria-hidden="true"
+                className={styles.bandRange}
+                style={{ gridColumn: '1 / -1', gridRow: `${band.start} / span ${band.span}` }}
+              />
+            ))}
+
             {(layout.colBands ?? []).flatMap((band) =>
               layout.dayRooms.map((r, i) => (
                 <div

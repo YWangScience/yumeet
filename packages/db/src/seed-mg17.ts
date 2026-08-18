@@ -52,6 +52,16 @@ interface StructuredPerson {
 /** 抓取下来的图片在站点里的落地目录 */
 const PUBLIC_ASSETS = join(import.meta.dirname, '../../../apps/web/public/mg17');
 
+/**
+ * 姓名归一。
+ *
+ * Indico 的名单里少数人写成「姓, 名」(如 Damour, Thibault),其余是「姓 名」。
+ * 同一份名单两种写法,按姓氏排序时会乱,读起来也扎眼 —— 统一去掉逗号。
+ * 只处理「一个逗号 + 两段」的情形,不去猜复杂的复姓与后缀。
+ */
+const tidyName = (n: string): string =>
+  n.replace(/^([^,]+),\s*([^,]+)$/, '$1 $2').replace(/\s+/g, ' ').trim();
+
 /** 校验不通过的图片,汇总后在末尾提示 */
 const brokenImages: string[] = [];
 
@@ -347,15 +357,6 @@ async function main() {
       if (local) photoMap.set(url, `/mg17/${local}`);
     });
   }
-  /**
-   * 姓名归一。
-   *
-   * Indico 的名单里少数人写成「姓, 名」(如 Damour, Thibault),其余是「姓 名」。
-   * 同一份名单两种写法,按姓氏排序时会乱,读起来也扎眼 —— 统一去掉逗号。
-   * 只处理「一个逗号 + 两段」的情形,不去猜复杂的复姓与后缀。
-   */
-  const tidyName = (n: string): string =>
-    n.replace(/^([^,]+),\s*([^,]+)$/, '$1 $2').replace(/\s+/g, ' ').trim();
 
   /**
    * 姓名的合理性校验。
@@ -393,6 +394,25 @@ async function main() {
     { eventId: event!.id, name: 'ICRANet Seminar Room', capacity: 80, location: 'ICRANet, Pescara', position: 5 },
   ]).returning();
   const [hall, ...parallelRooms] = roomRows;
+
+  /* ---------- 参会者名单 ---------- */
+  /*
+   * MG17 的参会者名单在原站是公开页面(registrations/participants),
+   * 所以照原样收录。只取姓名、单位、国家三列 —— 邮箱等联系方式原站
+   * 从未公开,不导入(与本文件其余部分同一条准则)。
+   */
+  const participants = read<{ name: string; affiliation: string | null; country: string | null }[]>(
+    'mg17-participants.json',
+  );
+  await db.insert(eventPeople).values(participants.map((p, i) => ({
+    eventId: event!.id,
+    kind: 'participant',
+    groupKey: null,
+    name: tidyName(p.name),
+    affiliation: p.affiliation,
+    country: p.country,
+    position: i,
+  })));
 
   /* ---------- 摘要 → submissions(已排期的历史投稿) ---------- */
   console.log('导入摘要…');

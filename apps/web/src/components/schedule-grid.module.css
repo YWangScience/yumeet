@@ -16,14 +16,14 @@
    *
    * 按时长等比给高度,只在需要横向比对多个会场时才有意义 ——
    * 上午只有一个会场在用,把 45 分钟画成 144 高只是把一行字撑开三倍。
-   * 压到 4.5px/5 分钟:45 分钟得 40px,一条横排卡片的高度,
-   * 时长的长短关系仍然看得出来。上午八九场全体报告,每场省下十几像素,
-   * 加起来就是少滚半屏。
+   * 压到 3px/5 分钟:45 分钟得 27px,配合 minmax(…, auto) 由内容决定实际高度,
+   * 于是卡片贴着自己的内容走,场与场之间不再留出大片空白。
+   * 上午八九场全体报告,每场省下几十像素,加起来就是少滚一屏。
    */
-  --sched-slot-solo-h: 4.5px;
-  /* 空档里的 5 分钟:压到 1/5。空白仍在、先后仍看得出,
+  --sched-slot-solo-h: 3px;
+  /* 空档里的 5 分钟:压到极窄。空白仍在、先后仍看得出,
      但整天不会被上午的空场撑成两屏。 */
-  --sched-slot-gap-h: 2.6px;
+  --sched-slot-gap-h: 1.6px;
   --sched-gutter: 56px;      /* 时间刻度列 */
   --sched-tabs-h: 64px;      /* 粘性 tab 条高度,供会场表头 sticky 偏移 */
   --sched-col-gap: var(--yu-space-2);
@@ -880,4 +880,56 @@
   padding: var(--yu-space-3) 0 var(--yu-space-2);
   margin-bottom: var(--yu-space-2);
   border-bottom: 1px solid var(--yu-color-hairline);
+}
+
+/* 并行段的整段范围:只用于测量,不占视觉 */
+.bandRange {
+  pointer-events: none;
+  z-index: 0;
+}
+
+/*
+ * 吸顶的会场行。
+ *
+ * 它是浮层(fixed 于滚动容器顶部),不参与网格排布 —— 早先把表头塞进
+ * 网格首行时,每段并行的第一排卡片都被盖掉半截。浮层则始终在卡片之上,
+ * 但只占顶部那一条,不会遮住正在读的内容。
+ * 只写会场名不写地点:吸顶时空间紧,地点在段首的完整表头里已经给过。
+ */
+.roomHeadStuck,
+.roomHeadStuckHidden {
+  position: sticky;
+  top: var(--sched-tabs-h);
+  z-index: 5;
+  display: grid;
+  column-gap: var(--sched-col-gap);
+  align-items: center;
+  height: 40px;
+  margin-bottom: -40px;   /* 浮层不占位,不把网格顶下去 */
+  padding: 0;
+  background: color-mix(in srgb, var(--yu-color-bg-page) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--yu-color-hairline);
+  transition: opacity 160ms ease;
+}
+
+.roomHeadStuckHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.roomHeadStuck {
+  opacity: 1;
+}
+
+.roomHeadStuck .roomHeadName,
+.roomHeadStuckHidden .roomHeadName {
+  font-size: var(--yu-text-footnote-size);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roomHeadStuck, .roomHeadStuckHidden { transition: none; }
 }
