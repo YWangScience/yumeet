@@ -72,3 +72,19 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* 排期:跟在分会与类型之后,用同一档小字,但不加胶囊边框 ——
+   它是事实信息不是分类标签,画个框会和左边的分会码抢注意力 */
+.when {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--yu-space-2);
+  font-size: var(--yu-text-footnote-size);
+  color: var(--yu-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.where::before {
+  content: '·';
+  margin-right: var(--yu-space-2);
+}

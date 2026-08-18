@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { getEventBySlug, searchAbstracts, listTracks, encodeId } from '@yumeet/core';
 import { resolveLocale } from '@/lib/locale-server';
 import { eventBase } from '@/lib/event-base';
-import { translator, eventContent, type TKey } from '@/lib/i18n';
+import { formatDateTime } from '@/lib/format';
+import { translator, eventContent, INTL_LOCALE, type TKey } from '@/lib/i18n';
 import { TalkFilters } from '@/components/talk-filters';
 import styles from './abstracts.module.css';
 
@@ -120,6 +121,16 @@ export default async function AbstractsPage({ params, searchParams }: Props) {
                 <p className={styles.meta}>
                   {s.track && <span className={styles.trackChip}>{s.track}</span>}
                   <span className={styles.type}>{tt(TYPE_LABEL[s.type] ?? 'typeTalk')}</span>
+                  {/* 排期跟在分会与类型之后:找到一篇想听的,紧接着要知道的就是
+                      「什么时候、在哪」,不该再让人去日程页翻一遍 */}
+                  {s.startsAt && (
+                    <span className={styles.when}>
+                      <time dateTime={s.startsAt.toISOString()}>
+                        {formatDateTime(s.startsAt, found.event.timezone, INTL_LOCALE[locale])}
+                      </time>
+                      {s.roomName && <span className={styles.where}>{s.roomName}</span>}
+                    </span>
+                  )}
                 </p>
               </article>
             </li>

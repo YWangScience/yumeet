@@ -144,7 +144,18 @@ export async function searchAbstracts(
     // 列表里给两行摘录:六百多篇报告,光看标题常常判断不了是不是自己要找的那篇。
     // 在 SQL 里截断,避免把六百段全文拉进进程再扔掉。
     excerpt: sql<string>`left(${submissions.abstract}, 260)`,
+    /*
+     * 排期信息(时间与会场)。
+     *
+     * 读者在摘要列表里找到一篇感兴趣的报告,下一个问题必然是「什么时候、在哪听」——
+     * 让他再去日程页翻一遍是多余的一步。用 LEFT JOIN:没排期的投稿照常列出,
+     * 只是这两列为空。
+     */
+    startsAt: sessions.startsAt,
+    roomName: rooms.name,
   }).from(submissions)
+    .leftJoin(sessions, eq(sessions.submissionId, submissions.id))
+    .leftJoin(rooms, eq(rooms.id, sessions.roomId))
     .where(where)
     .orderBy(asc(submissions.title))
     .limit(limit)

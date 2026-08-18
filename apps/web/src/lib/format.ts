@@ -40,3 +40,16 @@ export function formatMoney(cents: number, currency: string, locale = 'zh-Hans')
 export function viewerTimeZone(): string {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'UTC'; }
 }
+
+/**
+ * 「7月9日 14:30」这样的短日期时间。
+ *
+ * 用在摘要列表这类需要「哪天几点」但不必写出年份与星期的地方 ——
+ * 会期只有六天,年份与星期在页头已经交代过,重复只会把这一行拉长。
+ */
+export function formatDateTime(d: Date, timeZone: string, locale = 'zh-Hans'): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    hour12: false,
+  }).format(d);
+}
