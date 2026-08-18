@@ -54,3 +54,67 @@
   margin: var(--yu-space-8) 0;
 }
 .prose h4 { font-size: var(--yu-text-callout-size); font-weight: 600; margin: var(--yu-space-5) 0 var(--yu-space-2); }
+
+/* ── logo 墙 ─────────────────────────────────────────────── */
+/*
+ * 赞助方 logo 的宽高比从 1:1 到 16:9 都有,原尺寸铺开就是一堆大小不一的图。
+ * 统一成等高格子 + contain,视觉重量才对得齐;白底垫在下面,
+ * 是因为不少机构的 logo 是深色透明 PNG,直接压在页面底色上会糊成一团。
+ */
+.logoWall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--yu-space-4);
+  margin: var(--yu-space-6) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logoCell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--yu-space-3);
+}
+
+.logoCell img {
+  width: 100%;
+  height: 104px;
+  object-fit: contain;
+  padding: var(--yu-space-4);
+  background: #fff;
+  border: 1px solid var(--yu-color-hairline);
+  border-radius: var(--yu-radius-card);
+  box-sizing: border-box;
+}
+
+.logoCell a {
+  display: block;
+  width: 100%;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.logoCell a:hover img {
+  border-color: var(--yu-color-accent);
+}
+
+.logoCell a:hover {
+  transform: translateY(-2px);
+}
+
+.logoCell figcaption {
+  font-size: var(--yu-text-footnote-size);
+  line-height: 1.45;
+  color: var(--yu-color-text-secondary);
+  text-align: center;
+}
+
+.logoCell figcaption a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logoCell a { transition: none; }
+  .logoCell a:hover { transform: none; }
+}

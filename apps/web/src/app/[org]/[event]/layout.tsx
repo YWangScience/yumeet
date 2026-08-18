@@ -44,21 +44,28 @@ export default async function EventLayout({ children, params }: Props) {
    * 自定义页面按 slug 归到这七类;没列进来的落到 About,
    * 不会因为漏配一个 slug 就在导航上消失。
    */
-  type NavSection = 'program' | 'talks' | 'speakers' | 'committee' | 'award' | 'events' | 'about';
+  type NavSection =
+    | 'schedule' | 'program' | 'talks' | 'speakers' | 'committee' | 'award' | 'events' | 'about'
+    /** 内容已被别处完整覆盖的页面:保留可访问,但不占导航位 */
+    | 'hidden';
 
   const SECTION_OF_SLUG: Record<string, NavSection> = {
     'important-dates': 'program',
-    'chairperson-instructions': 'program',
+    // 分会主席须知是给少数人看的操作说明,不是会议安排,归到「关于会议」
+    'chairperson-instructions': 'about',
     'plenary-speakers': 'speakers',
     'mg-awards': 'award',
     'public-lectures': 'events',
     'social-events': 'events',
     'group-photo': 'events',
     'exhibitions': 'events',
-    'organizing-committees': 'committee',
-    'ioc': 'committee',
-    'icc': 'committee',
-    'loc': 'committee',
+    // 这四页是 Indico 上按委员会拆开的名单;/committees 一页已经把
+    // 三级委员会连同人数完整列出,再在菜单里重复四条只是让人多挑一次。
+    // 从导航移除(页面本身仍在,旧链接不断)。
+    'organizing-committees': 'hidden',
+    'ioc': 'hidden',
+    'icc': 'hidden',
+    'loc': 'hidden',
     'scientific-objectives': 'about',
     'general-information': 'about',
     'location': 'about',
@@ -70,7 +77,9 @@ export default async function EventLayout({ children, params }: Props) {
   };
 
   const SECTION_LABEL: Record<NavSection, string> = {
-    program: tt('navProgram'),
+    hidden: '',
+    schedule: tt('schedule'),
+    program: tt('navDates'),
     talks: tt('navTalks'),
     speakers: tt('speakers'),
     committee: tt('committees'),
@@ -80,11 +89,14 @@ export default async function EventLayout({ children, params }: Props) {
   };
 
   const sections: Record<NavSection, { href: string; label: string }[]> = {
-    program: [], talks: [], speakers: [], committee: [], award: [], events: [], about: [],
+    schedule: [], program: [], talks: [], speakers: [], committee: [], award: [],
+    events: [], about: [], hidden: [],
   };
 
   // 内建页面先落位,它们是每个板块里最主要的那一项
-  if (modules.schedule) sections.program.push({ href: `${base}/schedule`, label: tt('schedule') });
+  // 日程单独占一个顶级位:它是全站被点得最多的一页,
+  // 藏进下拉等于给最高频的去处多加一次点击。
+  if (modules.schedule) sections.schedule.push({ href: `${base}/schedule`, label: tt('schedule') });
   if (modules.archive) sections.talks.push({ href: `${base}/abstracts`, label: tt('abstracts') });
   if (modules.cfp) sections.talks.push({ href: `${base}/cfp`, label: tt('cfp') });
   if (people.total > 0) sections.speakers.push({ href: `${base}/speakers`, label: tt('speakers') });
@@ -102,7 +114,9 @@ export default async function EventLayout({ children, params }: Props) {
    * 只有一项的板块直接平铺成顶级链接,不做只含一条的下拉 ——
    * 让人点开一个菜单只为看到里面孤零零一项,是纯粹的浪费。
    */
-  const ORDER: NavSection[] = ['program', 'talks', 'speakers', 'committee', 'award', 'events', 'about'];
+  const ORDER: NavSection[] = [
+    'schedule', 'program', 'talks', 'speakers', 'committee', 'award', 'events', 'about',
+  ];
   const navEntries: NavEntry[] = [];
 
   for (const key of ORDER) {

@@ -287,6 +287,18 @@ async function main() {
   const tidyName = (n: string): string =>
     n.replace(/^([^,]+),\s*([^,]+)$/, '$1 $2').replace(/\s+/g, ' ').trim();
 
+  /**
+   * 姓名的合理性校验。
+   *
+   * 解析程序册与网页时,姓名字段最容易被相邻的标题或摘要污染 ——
+   * 曾经就有一条变成「Abhay Ashtekar *On the Quantum Nature…*** *The interface…」。
+   * 这类值一旦进库,会同时出现在日程、讲者页和首页速览上。
+   * 所以在写库前拦一道:带 Markdown 星号、或长得根本不像人名的,一律丢弃。
+   * 宁可某场报告缺讲者,也不能挂一段糊掉的文字冒充人名。
+   */
+  const looksLikeName = (n: string): boolean =>
+    n.length > 1 && n.length <= 45 && !/[*_#|]/.test(n) && n.split(/\s+/).length <= 6;
+
   await db.insert(eventPeople).values(structured.map((p) => ({
     eventId: event!.id,
     kind: p.kind,
@@ -368,9 +380,12 @@ async function main() {
         submissionId: submissionByContribution.get(a.contributionId) ?? null,
         title: a.title,
         startsAt: rome(d, 9 + k, 0), endsAt: rome(d, 9 + k, 45),
-        speakers: a.authors.slice(0, 2).map((au) => ({
-          name: au.name, affiliation: au.affiliation ?? undefined,
-        })),
+        speakers: a.authors
+          .filter((au) => looksLikeName(tidyName(au.name)))
+          .slice(0, 2)
+          .map((au) => ({
+            name: tidyName(au.name), affiliation: au.affiliation ?? undefined,
+          })),
       });
     }
     rows.push({
@@ -395,9 +410,12 @@ async function main() {
         submissionId: submissionByContribution.get(a.contributionId) ?? null,
         title: a.title,
         startsAt: rome(day, h, m), endsAt: rome(day, h, m + 22),
-        speakers: a.authors.slice(0, 2).map((au) => ({
-          name: au.name, affiliation: au.affiliation ?? undefined,
-        })),
+        speakers: a.authors
+          .filter((au) => looksLikeName(tidyName(au.name)))
+          .slice(0, 2)
+          .map((au) => ({
+            name: tidyName(au.name), affiliation: au.affiliation ?? undefined,
+          })),
       });
     });
   });

@@ -49,14 +49,66 @@ function inline(text: string): string {
 
 export function Markdown({ source }: { source: string }) {
   const blocks: string[] = [];
+  let logos: { src: string; alt: string; href: string | null; caption: string | null }[] = [];
   let ul: string[] = [];
   let ol: string[] = [];
   let para: string[] = [];
   let quote: string[] = [];
 
+  /*
+   * 「logo 段落」:整段只有一张图,可带一行说明或外链。
+   *
+   * 赞助方与合作机构页在 Indico 上就是这么写的,原样渲染的结果是
+   * 每张 logo 按自己的原始尺寸铺开 —— 623×402 挨着 744×686,
+   * 一页拖到两千八百像素,看上去像是排版坏了,而不是一份赞助名录。
+   *
+   * 这里把连续的 logo 段落收进一个等高网格:图统一 contain 进固定高度的格子,
+   * 于是宽高比各异的 logo 看起来是有意为之的一面墙,而不是一堆随机大小的图。
+   */
+  const LOGO_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
+  const LOGO_LINK_LINE = /^\[!\[([^\]]*)\]\(([^)\s]+)\)\]\(([^)\s]+)\)$/;
+
+  const flushLogos = () => {
+    if (!logos.length) return;
+    const cells = logos.map((l) => {
+      const img = `<img src="${l.src}" alt="${l.alt}" loading="lazy" />`;
+      const inner = l.href
+        ? `<a href="${l.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
+        : img;
+      const cap = l.caption ? `<figcaption>${inline(l.caption)}</figcaption>` : '';
+      return `<figure class="${styles.logoCell}">${inner}${cap}</figure>`;
+    }).join('');
+    blocks.push(`<div class="${styles.logoWall}">${cells}</div>`);
+    logos = [];
+  };
+
   const flushPara = () => {
     if (para.length) {
-      blocks.push(`<p>${inline(para.join(' '))}</p>`);
+      // 只有一张图、且没有别的文字 —— 交给 logo 墙
+      const joined = para.join(' ').trim();
+      const link = LOGO_LINK_LINE.exec(joined);
+      const bare = LOGO_LINE.exec(joined);
+      if (link || bare) {
+        const alt = (link ? link[1] : bare![1]) ?? '';
+        const src = safeUrl((link ? link[2] : bare![2]) ?? '');
+        const href = link ? safeUrl(link[3] ?? '') : null;
+        if (src) {
+          logos.push({ src, alt: escapeHtml(alt), href, caption: null });
+          para = [];
+          return;
+        }
+      }
+      // 图片段之后紧跟的一行链接/文字,视为这张 logo 的说明
+      if (logos.length && joined.length <= 120 && !/^#/.test(joined)) {
+        const last = logos[logos.length - 1]!;
+        if (!last.caption) {
+          last.caption = joined;
+          para = [];
+          return;
+        }
+      }
+      flushLogos();
+      blocks.push(`<p>${inline(joined)}</p>`);
       para = [];
     }
   };
@@ -78,12 +130,13 @@ export function Markdown({ source }: { source: string }) {
       quote = [];
     }
   };
-  const flushAll = () => { flushPara(); flushUl(); flushOl(); flushQuote(); };
+  const flushAll = () => { flushPara(); flushLogos(); flushUl(); flushOl(); flushQuote(); };
 
   for (const raw of source.split('\n')) {
     const line = raw.trim();
 
-    if (line === '') { flushAll(); continue; }
+    // 空行只结束当前段落,不结束 logo 墙 —— Markdown 里图与图之间本就隔着空行
+    if (line === '') { flushPara(); flushUl(); flushOl(); flushQuote(); continue; }
 
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) { flushAll(); blocks.push('<hr />'); continue; }
 

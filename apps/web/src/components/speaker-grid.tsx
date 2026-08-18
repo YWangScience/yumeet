@@ -36,8 +36,14 @@ function initials(name: string): string {
  *
  * **整张卡片就是那个开关**,不在卡片里再放一枚小按钮:
  * 卡片本身已经是一个视觉上的可操作单元,再嵌一个按钮等于把命中区
- * 从两百多平方像素缩到几十,还让人先找按钮在哪。右下角的箭头只是状态提示,
- * 不是唯一的下手处。语义上用 <button> 包住整块,键盘与读屏因此照常可用。
+ * 从两百多平方像素缩到几十,还让人先找按钮在哪。
+ *
+ * 也不写「展开摘要 / 收起」这类字。可点这件事该由样子说清楚 ——
+ * 光标变手、悬停时卡片浮起并透出角标、展开后角标翻转,
+ * 这些是人人都认得的信号。用文字讲解操作,等于承认视觉没做到位,
+ * 而且三十多张卡片各挂一句同样的话,页面上就多了三十多处噪声。
+ * 读屏用户不看这些视觉信号,他们拿到的是 <button> 的语义与 aria-expanded,
+ * 信息量比那行字更准确。
  *
  * 网格用 align-items: start,于是展开的卡片只把自己撑高,不会顶动同排的其他人。
  */
@@ -88,17 +94,10 @@ export function SpeakerGrid({
                   {s.affiliation && <p className={styles.aff}>{s.affiliation}</p>}
                   {s.talkTitle && <p className={styles.talk}>{s.talkTitle}</p>}
 
-                  {hasBio && (
-                    <span className={styles.hint}>
-                      <span className={styles.hintText}>
-                        {open ? tt('hideAbstract') : tt('readAbstract')}
-                      </span>
-                      <span className={open ? styles.chevronUp : styles.chevron} aria-hidden="true">
-                        ⌄
-                      </span>
-                    </span>
-                  )}
                 </div>
+                {hasBio && (
+                  <span className={open ? styles.chevronUp : styles.chevron} aria-hidden="true" />
+                )}
               </div>
               </button>
 

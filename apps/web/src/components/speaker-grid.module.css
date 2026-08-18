@@ -7,6 +7,7 @@
   align-items: start;
 }
 .card, .cardOpen {
+  position: relative;
   display: flex; flex-direction: column; gap: var(--yu-space-3);
   background: var(--yu-color-bg-elevated);
   border: 1px solid var(--yu-color-hairline);
@@ -14,10 +15,16 @@
   padding: var(--yu-space-4) var(--yu-space-5);
   transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
 }
+/* 悬停时整卡浮起并透出主色边:这是「我可以被按」最直接的一句话,
+   不需要再写一行字来解释。姓名同时转成主色,指明这一块是一个整体。 */
 .card:hover {
   border-color: var(--yu-color-accent);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.card:hover .name {
+  color: var(--yu-color-accent-text);
 }
 
 /*
@@ -57,6 +64,8 @@
   gap: var(--yu-space-4);
   align-items: flex-start;
   min-width: 0;
+  /* 给右上角的角标让出位置,标题不至于压到它底下 */
+  padding-right: var(--yu-space-5);
 }
 
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
@@ -86,6 +95,7 @@
 .name {
   font-size: var(--yu-text-callout-size); font-weight: 600;
   letter-spacing: var(--yu-text-callout-tracking); line-height: 1.3;
+  transition: color 160ms ease;
 }
 .aff {
   margin-top: 2px; font-size: var(--yu-text-footnote-size);
@@ -135,39 +145,44 @@
   outline-offset: 2px;
 }
 
-/* 「展开摘要」现在只是提示,不是唯一下手处 —— 弱化成一行文字,
-   悬停整卡时才提亮,把「这张卡可以按」说清楚 */
-.hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: var(--yu-space-3);
-  color: var(--yu-color-accent-text);
-  font-size: var(--yu-text-footnote-size);
-  line-height: 1.5;
-}
-
-.card:hover .hintText,
-.cardOpen .hintText {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
+/*
+ * 角标:用形状而不是文字说明「这里能展开」。
+ *
+ * 平时很淡,只作为一个不打扰的记号;悬停时变深并下沉一点,
+ * 展开后翻转 180° —— 翻转本身就说明了当前状态与再次点击的结果,
+ * 比「收起」两个字更快被读懂,也不占版面。
+ */
 .chevron, .chevronUp {
-  display: inline-block;
-  font-size: 13px;
-  line-height: 1;
-  transition: transform 180ms ease;
+  position: absolute;
+  right: var(--yu-space-4);
+  top: var(--yu-space-4);
+  width: 9px;
+  height: 9px;
+  border-right: 1.6px solid var(--yu-color-text-secondary);
+  border-bottom: 1.6px solid var(--yu-color-text-secondary);
+  transform: rotate(45deg);
+  opacity: 0.45;
+  transition: opacity 160ms ease, transform 200ms ease, border-color 160ms ease;
+}
+
+.card:hover .chevron {
+  opacity: 1;
+  border-color: var(--yu-color-accent);
+  transform: rotate(45deg) translate(2px, 2px);
 }
 
 .chevronUp {
   composes: chevron;
-  transform: rotate(180deg);
+  opacity: 1;
+  border-color: var(--yu-color-accent);
+  transform: rotate(-135deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .chevron, .chevronUp { transition: none; }
+  .card:hover .chevron { transform: rotate(45deg); }
 }
+
 
 .bio {
   border-top: 1px solid var(--yu-color-hairline);
