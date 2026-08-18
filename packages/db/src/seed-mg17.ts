@@ -400,11 +400,41 @@ async function main() {
   const looksLikeName = (n: string): boolean =>
     n.length > 1 && n.length <= 45 && !/[*_#|]/.test(n) && n.split(/\s+/).length <= 6;
 
+  /*
+   * 主席的姓名顺序与名单主体统一。
+   *
+   * 名单主体一律写「姓 名」(Hafizi Mimoza),而各委员会主席抓自另一处,
+   * 写成了「名 姓」(Gregory Vereshchagin)—— 同一个人在同一页出现两种写法,
+   * 读者会以为是两个人。
+   *
+   * 匹配用「与词序无关的键」(把字母排序后比较),两种写法因此落到同一个键;
+   * 写法取名单主体的那一种。主体里没有的取其他条目里已有的写法;
+   * 两处都没有的保持原样 —— 不去猜哪个词是姓。
+   */
+  const orderless = (n: string): string =>
+    [...tidyName(n).toLowerCase().replace(/[^a-z]/g, '')].sort().join('');
+
+  const canonicalName = new Map<string, string>();
+  for (const p of structured) {
+    if (p.kind === 'committee' && !p.role) {
+      const k = orderless(p.name);
+      if (!canonicalName.has(k)) canonicalName.set(k, tidyName(p.name));
+    }
+  }
+  for (const p of structured) {
+    if (p.kind === 'committee' && p.role) {
+      const k = orderless(p.name);
+      if (!canonicalName.has(k)) canonicalName.set(k, tidyName(p.name));
+    }
+  }
+
   await db.insert(eventPeople).values(structured.map((p) => ({
     eventId: event!.id,
     kind: p.kind,
     groupKey: p.groupKey ?? null,
-    name: tidyName(p.name),
+    name: p.kind === 'committee'
+      ? (canonicalName.get(orderless(p.name)) ?? tidyName(p.name))
+      : tidyName(p.name),
     affiliation: p.affiliation ?? null,
     country: p.country ?? null,
     talkTitle: p.talkTitle ?? null,
