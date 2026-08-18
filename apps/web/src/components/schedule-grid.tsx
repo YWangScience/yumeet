@@ -310,9 +310,11 @@ export function ScheduleGrid({ days, rooms, eventTimezone, locale }: Props) {
     let raf = 0;
     const measure = () => {
       raf = 0;
-      const line = (rootRef.current
-        ? parseFloat(getComputedStyle(rootRef.current).getPropertyValue('--sched-nav-h') || '0')
-        : 0) + 56;
+      // 吸顶线 = 顶栏 + 日期条,与 CSS 里 .roomHeadStuck 的 top 保持同一个算式
+      const cs = rootRef.current ? getComputedStyle(rootRef.current) : null;
+      const navH = parseFloat(cs?.getPropertyValue('--sched-nav-h') || '48') || 48;
+      const tabsH = parseFloat(cs?.getPropertyValue('--sched-tabs-h') || '64') || 64;
+      const line = navH + tabsH;
       const ranges = el.querySelectorAll<HTMLElement>('[data-band-range]');
       let inside = false;
       for (const r of ranges) {

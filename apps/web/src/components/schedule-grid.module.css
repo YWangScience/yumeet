@@ -26,6 +26,17 @@
   --sched-slot-gap-h: 1.6px;
   --sched-gutter: 56px;      /* 时间刻度列 */
   --sched-tabs-h: 64px;      /* 粘性 tab 条高度,供会场表头 sticky 偏移 */
+  /*
+   * 站点顶栏的高度,由脚本量出后写在 .root 上(见 --sched-nav-h 的设置处)。
+   * 48px 只是兜底 —— 脚本没跑到时不至于叠到导航底下。
+   *
+   * 页面上有三层要依次叠放:顶栏、日期条、会场行。
+   * 每一层的 top 都必须等于它上面各层的高度之和,否则那一层会滑到
+   * 上一层底下,只露出半截 —— 日期条钉在 top:0 时就是这样,
+   * 它整条滑进了顶栏后面,而会场行又停在更低的位置,
+   * 中间就留下一道日期条的残影。
+   */
+  --sched-nav-h: 48px;
   --sched-col-gap: var(--yu-space-2);
 }
 
@@ -124,7 +135,7 @@
 
 .tabsBar {
   position: sticky;
-  top: 0;
+  top: var(--sched-nav-h);
   z-index: 3;
   height: var(--sched-tabs-h);
   display: flex;
@@ -899,7 +910,8 @@
 .roomHeadStuck,
 .roomHeadStuckHidden {
   position: sticky;
-  top: var(--sched-tabs-h);
+  /* 叠在顶栏与日期条之下 */
+  top: calc(var(--sched-nav-h) + var(--sched-tabs-h));
   z-index: 5;
   display: grid;
   column-gap: var(--sched-col-gap);
